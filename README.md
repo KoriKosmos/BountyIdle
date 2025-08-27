@@ -1,0 +1,2 @@
+# BountyIdle
+An incremental game
