@@ -61,6 +61,10 @@
 
     <!-- JavaScript for interactive functionality -->
     <script>
+    // Save key for localStorage
+    const SAVE_KEY = "bountySaveV1";
+
+    // Game state
     const state = {
       credits: 0,
       ticks: 0,
@@ -74,40 +78,45 @@
     const fmt1 = n => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
     function updateUI() {
-      $('credits').textContent = fmt0(state.credits);
-      $('ticks').textContent = fmt0(state.ticks);
-      $('unbanked').textContent = fmt1(state.unbanked);
+      $("credits").textContent = fmt0(state.credits);
+      $("ticks").textContent = fmt0(state.ticks);
+      const u = document.getElementById("unbanked");
+      if (u) u.textContent = fmt1(state.unbanked);
 
-      // Reveal the hire row when you have 20 credits and have not hired yet
-      const canSeeHire = state.credits >= 20 && !state.noviceHired;
-      $('hireRow').style.display = canSeeHire ? '' : 'none';
+      const hireRow = document.getElementById("hireRow");
+      if (hireRow) {
+        const canSeeHire = state.credits >= 20 && !state.noviceHired;
+        hireRow.style.display = canSeeHire ? "" : "none";
+      }
     }
 
-    $('huntBtn').addEventListener('click', () => {
+    // Actions
+    $("huntBtn").addEventListener("click", () => {
       state.credits += 1;
       updateUI();
     });
 
-    // Hire logic
-    $('hireBtn')?.addEventListener('click', () => {
-      if (state.noviceHired) return;
-      if (state.credits < 20) return;
-
-      state.credits -= 20;
-      state.passivePerTick += 0.1;
-      state.noviceHired = true;
-      updateUI();
-    });
+    const hireBtn = document.getElementById("hireBtn");
+    if (hireBtn) {
+      hireBtn.addEventListener("click", () => {
+        if (state.noviceHired) return;
+        if (state.credits < 20) return;
+        state.credits -= 20;
+        state.passivePerTick += 0.1;
+        state.noviceHired = true;
+        updateUI();
+      });
+    }
 
     // Tick and banking
     const TICK_MS = 1000;
     setInterval(() => {
       state.ticks += 1;
 
-      // Grow unbanked by passive
+      // Grow unbanked by passive income
       state.unbanked += state.passivePerTick;
 
-      // Bank whole credits to main balance
+      // Bank only whole credits
       const whole = Math.floor(state.unbanked);
       if (whole > 0) {
         state.credits += whole;
@@ -117,7 +126,29 @@
       updateUI();
     }, TICK_MS);
 
+    // Persistence
+    function save() {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    }
+
+    function load() {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        Object.assign(state, data);
+      } catch {}
+    }
+
+    // Load once, then autosave every 60s
+    load();
     updateUI();
+    setInterval(save, 60_000);
+
+    // Optional: save when tab is hidden
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) save();
+    });
   </script>
   </body>
 </html>
