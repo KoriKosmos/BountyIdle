@@ -44,6 +44,10 @@
             <button id="huntBtn">Hunt petty bounty</button>
             <span>+1 credit</span>
           </div>
+          <div class="row" id="hireRow" style="display:none">
+            <button id="hireBtn">Hire Novice Hunter</button>
+            <span>Cost 20. Adds +0.1 per tick</span>
+          </div>
           <div class="row">
             <span>Ticks:</span>
             <strong class="num" id="ticks">0</strong>
@@ -60,8 +64,9 @@
     const state = {
       credits: 0,
       ticks: 0,
-      unbanked: 0,        // grows each tick
-      passivePerTick: 0,  // increased by hires later
+      unbanked: 0,
+      passivePerTick: 0,
+      noviceHired: false,
     };
 
     const $ = id => document.getElementById(id);
@@ -72,6 +77,10 @@
       $('credits').textContent = fmt0(state.credits);
       $('ticks').textContent = fmt0(state.ticks);
       $('unbanked').textContent = fmt1(state.unbanked);
+
+      // Reveal the hire row when you have 20 credits and have not hired yet
+      const canSeeHire = state.credits >= 20 && !state.noviceHired;
+      $('hireRow').style.display = canSeeHire ? '' : 'none';
     }
 
     $('huntBtn').addEventListener('click', () => {
@@ -79,10 +88,32 @@
       updateUI();
     });
 
+    // Hire logic
+    $('hireBtn')?.addEventListener('click', () => {
+      if (state.noviceHired) return;
+      if (state.credits < 20) return;
+
+      state.credits -= 20;
+      state.passivePerTick += 0.1;
+      state.noviceHired = true;
+      updateUI();
+    });
+
+    // Tick and banking
     const TICK_MS = 1000;
     setInterval(() => {
       state.ticks += 1;
-      state.unbanked += state.passivePerTick; // visual only for now
+
+      // Grow unbanked by passive
+      state.unbanked += state.passivePerTick;
+
+      // Bank whole credits to main balance
+      const whole = Math.floor(state.unbanked);
+      if (whole > 0) {
+        state.credits += whole;
+        state.unbanked -= whole;
+      }
+
       updateUI();
     }, TICK_MS);
 
