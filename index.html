@@ -1,15 +1,37 @@
 <!DOCTYPE html>
 <html>
-  <head><title>Idle Game</title></head>
+  <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bounty Office</title>
   <body>
-    <button id="huntButton">Hunt</button>
-    <p>Credits: <span id="creditCount">0</span></p>
-    <script>
-      let credits = 0;
-      document.getElementById("huntButton").addEventListener("click", function() {
-        credits++;
-        document.getElementById("creditCount").textContent = credits;
-      });
-    </script>
+  <div class="wrap">
+    <h1>Bounty Office</h1>
+    <div class="card">
+      <div class="row"><span>Credits:</span><strong class="num" id="credits">0</strong></div>
+      <div class="row">
+        <button id="huntBtn">Hunt petty bounty</button>
+        <span>+1 credit</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = { credits: 0 };
+
+    const $ = id => document.getElementById(id);
+    const fmt = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+    function updateUI() {
+      $('credits').textContent = fmt(state.credits);
+    }
+
+    $('huntBtn').addEventListener('click', () => {
+      state.credits += 1;
+      updateUI();
+    });
+
+    updateUI();
+  </script>
   </body>
 </html>
