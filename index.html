@@ -36,44 +36,47 @@
       <h1>Bounty Office</h1>
       <!-- Card displays credits and action button -->
       <div class="card">
-        <!-- Row showing current credits -->
-        <div class="row">
-          <span>Credits:</span>
-          <!-- Credits value, updated by JS -->
-          <strong class="num" id="credits">0</strong>
+          <div class="row">
+            <span>Credits:</span>
+            <strong class="num" id="credits">0</strong>
+          </div>
+          <div class="row">
+            <button id="huntBtn">Hunt petty bounty</button>
+            <span>+1 credit</span>
+          </div>
+          <div class="row">
+            <span>Ticks:</span>
+            <strong class="num" id="ticks">0</strong>
+          </div>
         </div>
-        <!-- Row with button to earn credits -->
-        <div class="row">
-          <button id="huntBtn">Hunt petty bounty</button>
-          <span>+1 credit</span>
-        </div>
-      </div>
     </div>
 
     <!-- JavaScript for interactive functionality -->
     <script>
-      // State object to keep track of credits
-      const state = { credits: 0 };
+      // State
+        const state = { credits: 0, ticks: 0 };
 
-      // Helper function to get element by ID
-      const $ = id => document.getElementById(id);
+        const $ = id => document.getElementById(id);
+        const fmt0 = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 
-      // Format numbers for display (e.g., 1,000)
-      const fmt = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        function updateUI() {
+            $('credits').textContent = fmt0(state.credits);
+            $('ticks').textContent = fmt0(state.ticks);
+        }
 
-      // Update the credits display in the UI
-      function updateUI() {
-        $('credits').textContent = fmt(state.credits);
-      }
+        $('huntBtn').addEventListener('click', () => {
+            state.credits += 1;
+            updateUI();
+        });
 
-      // Add click event to the hunt button to increase credits
-      $('huntBtn').addEventListener('click', () => {
-        state.credits += 1; // Increment credits by 1
-        updateUI(); // Refresh the UI
-      });
+        // Fixed tick at 1 second
+        const TICK_MS = 1000;
+        setInterval(() => {
+            state.ticks += 1;
+            updateUI();
+        }, TICK_MS);
 
-      // Initialize the UI with starting credits
-      updateUI();
+        updateUI();
     </script>
   </body>
 </html>
