@@ -46,7 +46,7 @@
           </div>
           <div class="row" id="hireRow" style="display:none">
             <button id="hireBtn">Hire Novice Hunter</button>
-            <span>Cost 20. Adds +0.1 per tick</span>
+            <span id="hireCostSpan">Cost 20. Adds +0.1 per tick</span>
           </div>
           <div class="row">
             <span>Ticks:</span>
@@ -70,12 +70,17 @@
       ticks: 0,
       unbanked: 0,
       passivePerTick: 0,
-      noviceHired: false,
+      noviceCount: 0, // Number of Novice Hunters hired
     };
 
     const $ = id => document.getElementById(id);
     const fmt0 = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
     const fmt1 = n => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    // Calculate the cost for the next Novice Hunter (scaling: base 20, x1.15^count)
+    function getNoviceCost() {
+      return Math.floor(20 * Math.pow(1.15, state.noviceCount));
+    }
 
     function updateUI() {
       $("credits").textContent = fmt0(state.credits);
@@ -83,15 +88,21 @@
       const u = document.getElementById("unbanked");
       if (u) u.textContent = fmt1(state.unbanked);
 
+      // Update hire cost and count display
+      const hireCostSpan = document.getElementById("hireCostSpan");
+      if (hireCostSpan) {
+        hireCostSpan.textContent = `Cost ${getNoviceCost()}. Adds +0.1 per tick. Hired: ${state.noviceCount}`;
+      }
+
       const hireRow = document.getElementById("hireRow");
-        if (hireRow) {
-          // Show the hire button once credits >= 20, and keep it visible forever after
-          if (state.credits >= 20 || hireRow.style.display === "") {
-            hireRow.style.display = "";
-          } else {
-            hireRow.style.display = "none";
-          }
+      if (hireRow) {
+        // Show the hire button once credits >= cost, and keep it visible forever after
+        if (state.credits >= getNoviceCost() || hireRow.style.display === "") {
+          hireRow.style.display = "";
+        } else {
+          hireRow.style.display = "none";
         }
+      }
     }
 
     // Actions
@@ -103,9 +114,11 @@
     const hireBtn = document.getElementById("hireBtn");
     if (hireBtn) {
       hireBtn.addEventListener("click", () => {
-        if (state.credits < 20) return; // Not enough credits
-        state.credits -= 20;
+        const cost = getNoviceCost();
+        if (state.credits < cost) return; // Not enough credits
+        state.credits -= cost;
         state.passivePerTick += 0.1; // Each purchase adds passive income
+        state.noviceCount = (state.noviceCount || 0) + 1;
         updateUI();
       });
     }
