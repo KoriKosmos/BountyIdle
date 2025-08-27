@@ -48,35 +48,45 @@
             <span>Ticks:</span>
             <strong class="num" id="ticks">0</strong>
           </div>
+          <div class="row">
+            <span>Unbanked:</span>
+            <strong class="num" id="unbanked">0.0</strong>
+          </div>
         </div>
     </div>
 
     <!-- JavaScript for interactive functionality -->
     <script>
-      // State
-        const state = { credits: 0, ticks: 0 };
+    const state = {
+      credits: 0,
+      ticks: 0,
+      unbanked: 0,        // grows each tick
+      passivePerTick: 0,  // increased by hires later
+    };
 
-        const $ = id => document.getElementById(id);
-        const fmt0 = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const $ = id => document.getElementById(id);
+    const fmt0 = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const fmt1 = n => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-        function updateUI() {
-            $('credits').textContent = fmt0(state.credits);
-            $('ticks').textContent = fmt0(state.ticks);
-        }
+    function updateUI() {
+      $('credits').textContent = fmt0(state.credits);
+      $('ticks').textContent = fmt0(state.ticks);
+      $('unbanked').textContent = fmt1(state.unbanked);
+    }
 
-        $('huntBtn').addEventListener('click', () => {
-            state.credits += 1;
-            updateUI();
-        });
+    $('huntBtn').addEventListener('click', () => {
+      state.credits += 1;
+      updateUI();
+    });
 
-        // Fixed tick at 1 second
-        const TICK_MS = 1000;
-        setInterval(() => {
-            state.ticks += 1;
-            updateUI();
-        }, TICK_MS);
+    const TICK_MS = 1000;
+    setInterval(() => {
+      state.ticks += 1;
+      state.unbanked += state.passivePerTick; // visual only for now
+      updateUI();
+    }, TICK_MS);
 
-        updateUI();
-    </script>
+    updateUI();
+  </script>
   </body>
 </html>
