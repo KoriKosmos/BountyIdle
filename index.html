@@ -84,10 +84,14 @@
       if (u) u.textContent = fmt1(state.unbanked);
 
       const hireRow = document.getElementById("hireRow");
-      if (hireRow) {
-        const canSeeHire = state.credits >= 20 && !state.noviceHired;
-        hireRow.style.display = canSeeHire ? "" : "none";
-      }
+        if (hireRow) {
+          // Show the hire button once credits >= 20, and keep it visible forever after
+          if (state.credits >= 20 || hireRow.style.display === "") {
+            hireRow.style.display = "";
+          } else {
+            hireRow.style.display = "none";
+          }
+        }
     }
 
     // Actions
@@ -99,11 +103,9 @@
     const hireBtn = document.getElementById("hireBtn");
     if (hireBtn) {
       hireBtn.addEventListener("click", () => {
-        if (state.noviceHired) return;
-        if (state.credits < 20) return;
+        if (state.credits < 20) return; // Not enough credits
         state.credits -= 20;
-        state.passivePerTick += 0.1;
-        state.noviceHired = true;
+        state.passivePerTick += 0.1; // Each purchase adds passive income
         updateUI();
       });
     }
