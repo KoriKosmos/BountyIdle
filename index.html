@@ -65,13 +65,7 @@
     <!-- Upgrades Sidebar -->
     <div id="upgradesArea" class="card" style="min-width: 220px; margin: 18px 0; margin-left: 12px; display: none; flex-direction: column; align-items: flex-start; padding: 18px;">
       <h1 style="font-size: 26px; margin: 0 0 18px 0;">Upgrades</h1>
-      <div id="upgradeReduceCooldown" style="display:none; width: 100%;">
-        <div style="display: flex; align-items: center;">
-          <button id="buyReduceCooldownBtn" style="margin-left: 0;">Reduce Cooldown</button>
-          <span id="reduceCooldownCostSpan" style="margin-left: 12px;">Cost 10</span>
-        </div>
-        <div style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Reduces button click cooldown by 5%</div>
-      </div>
+      <div id="upgradeArea" style="width: 100%;"></div>
     </div>
     <!-- Main wrapper for page content -->
     <div class="wrap" style="flex: 1;">
@@ -136,6 +130,18 @@
       // Add more contracts here!
     ];
 
+    // Upgrade types data structure (scalable like crew types)
+    const upgradeTypes = [
+      {
+        id: "reduceCooldown",
+        name: "Reduce Cooldown",
+        baseCost: 10,
+        scaling: 1.15,
+        description: "Reduces button click cooldown by 5%",
+      },
+      // Future upgrades can be added here
+    ];
+
     // Game state
     const state = {
       credits: 0,
@@ -144,9 +150,7 @@
       clickMultiplier: 1,
       huntCooldownMs: 1000,
       huntReadyAt: 0,
-      upgrades: {
-        reduceCooldownCount: 0,
-      },
+      upgrades: {}, // map of upgradeId -> count
       flags: {
         contractsUnlocked: false,
         contractsHintRemoved: false,
@@ -171,12 +175,10 @@
       return 1 * (state.clickMultiplier || 1);
     }
 
-    // Upgrade: Reduce Cooldown cost calculation (copies crew scaling logic)
-    function getReduceCooldownCost() {
-      const baseCost = 10; // first appears at 10, costs 10
-      const scaling = 1.15; // same scaling style as Novice Hunter
-      const count = state.upgrades.reduceCooldownCount || 0;
-      return Math.floor(baseCost * Math.pow(scaling, count));
+    // Generic upgrade cost calculation
+    function getUpgradeCost(upgrade) {
+      const count = (state.upgrades && state.upgrades[upgrade.id]) || 0;
+      return Math.floor(upgrade.baseCost * Math.pow(upgrade.scaling, count));
     }
 
     function canHuntClick() {
@@ -239,9 +241,7 @@
 
       // Upgrades UI
       const upgradesArea = document.getElementById("upgradesArea");
-      const reduceRow = document.getElementById("upgradeReduceCooldown");
-      const reduceBtn = document.getElementById("buyReduceCooldownBtn");
-      const reduceCostSpan = document.getElementById("reduceCooldownCostSpan");
+      const upgradeArea = document.getElementById("upgradeArea");
       const baseRevealCost = 10;
       // Reveal the Upgrades card the first time player reaches 10 credits
       if (!state.flags.upgradesRevealed && state.credits >= baseRevealCost) {
@@ -251,11 +251,21 @@
       if (upgradesArea) {
         upgradesArea.style.display = state.flags.upgradesRevealed ? "" : "none";
       }
-      if (reduceRow) {
-        reduceRow.style.display = state.flags.upgradesRevealed ? "" : "none";
-        const cost = getReduceCooldownCost();
-        if (reduceCostSpan) reduceCostSpan.textContent = `Cost ${cost}`;
-        if (reduceBtn) reduceBtn.disabled = state.credits < cost;
+      if (upgradeArea && state.flags.upgradesRevealed) {
+        // Render all upgrades
+        let html = "";
+        for (const up of upgradeTypes) {
+          const cost = getUpgradeCost(up);
+          const disabled = state.credits < cost ? "disabled" : "";
+          html += `<div class='upgradeRow' style='margin-bottom: 12px;'>
+            <div style='display:flex; align-items:center;'>
+              <button data-upgrade-id='${up.id}' ${disabled} style='margin-left:0;'>${up.name}</button>
+              <span style='margin-left:12px;'>Cost ${cost}</span>
+            </div>
+            <div style='font-size:13px; color:#aaa; margin-top:2px; margin-left:2px;'>${up.description}</div>
+          </div>`;
+        }
+        upgradeArea.innerHTML = html;
       }
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
@@ -342,29 +352,44 @@
       });
     }
 
-    // Upgrades: Reduce Cooldown purchase handler (repeatable with scaling cost)
-    const buyReduceCooldownBtn = document.getElementById("buyReduceCooldownBtn");
-    if (buyReduceCooldownBtn) {
-      buyReduceCooldownBtn.addEventListener("click", () => {
-        const cost = getReduceCooldownCost();
-        if (state.credits < cost) return;
-        state.credits -= cost;
-        state.upgrades.reduceCooldownCount = (state.upgrades.reduceCooldownCount || 0) + 1;
-        // Apply 5% reduction to cooldown (multiplicative)
-        const oldCd = state.huntCooldownMs || 1000;
-        const newCd = Math.max(100, Math.round(oldCd * 0.95));
-        state.huntCooldownMs = newCd;
-        // If currently cooling down, scale remaining time proportionally
-        const now = Date.now();
-        if (state.huntReadyAt && state.huntReadyAt > now) {
-          const remaining = state.huntReadyAt - now;
-          const scaled = Math.round(remaining * 0.95);
-          state.huntReadyAt = now + Math.max(0, scaled);
+    // Upgrades: generic delegated purchase handler
+    document.addEventListener('click', function(e) {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const upId = target.getAttribute('data-upgrade-id');
+      if (!upId) return;
+      const up = upgradeTypes.find(u => u.id === upId);
+      if (!up) return;
+      const cost = getUpgradeCost(up);
+      if (state.credits < cost) return;
+      state.credits -= cost;
+      state.upgrades[up.id] = (state.upgrades[up.id] || 0) + 1;
+      // Apply upgrade effect
+      applyUpgradeEffect(up.id);
+      try { save(); } catch {}
+      updateUI();
+      showToast(`Upgrade purchased: ${up.name}`);
+    });
+
+    function applyUpgradeEffect(id) {
+      switch (id) {
+        case 'reduceCooldown': {
+          // Apply 5% reduction to cooldown (multiplicative)
+          const oldCd = state.huntCooldownMs || 1000;
+          const newCd = Math.max(100, Math.round(oldCd * 0.95));
+          state.huntCooldownMs = newCd;
+          // Scale remaining cooldown proportionally if active
+          const now = Date.now();
+          if (state.huntReadyAt && state.huntReadyAt > now) {
+            const remaining = state.huntReadyAt - now;
+            const scaled = Math.round(remaining * 0.95);
+            state.huntReadyAt = now + Math.max(0, scaled);
+          }
+          break;
         }
-        try { save(); } catch {}
-        updateUI();
-        showToast("Upgrade purchased: Cooldown -5%");
-      });
+        default:
+          break;
+      }
     }
 
     // Tick and banking
@@ -445,10 +470,17 @@
             Object.assign(crewTypes[i], data.crewTypes[i]);
           }
         }
-        // Migrate legacy single-purchase flag to count
-        if (state.upgrades && state.upgrades.reduceCooldownPurchased && state.upgrades.reduceCooldownCount == null) {
-          state.upgrades.reduceCooldownCount = 1;
+        // Ensure upgrades is an object map
+        if (!state.upgrades || typeof state.upgrades !== 'object') state.upgrades = {};
+        // Migrations from earlier structures
+        if (state.upgrades && state.upgrades.reduceCooldownPurchased && state.upgrades.reduceCooldown == null) {
+          state.upgrades.reduceCooldown = 1;
           delete state.upgrades.reduceCooldownPurchased;
+          state.flags.upgradesRevealed = true;
+        }
+        if (state.upgrades && state.upgrades.reduceCooldownCount != null) {
+          state.upgrades.reduceCooldown = state.upgrades.reduceCooldownCount;
+          delete state.upgrades.reduceCooldownCount;
           state.flags.upgradesRevealed = true;
         }
       } catch {}
