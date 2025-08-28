@@ -145,11 +145,12 @@
       huntCooldownMs: 1000,
       huntReadyAt: 0,
       upgrades: {
-        reduceCooldownPurchased: false,
+        reduceCooldownCount: 0,
       },
       flags: {
         contractsUnlocked: false,
         contractsHintRemoved: false,
+        upgradesRevealed: false,
       },
       contractActive: false,
       contractProgress: 0,
@@ -168,6 +169,14 @@
     // Base click value (kept in one place for parity across buttons)
     function getClickValue() {
       return 1 * (state.clickMultiplier || 1);
+    }
+
+    // Upgrade: Reduce Cooldown cost calculation (copies crew scaling logic)
+    function getReduceCooldownCost() {
+      const baseCost = 10; // first appears at 10, costs 10
+      const scaling = 1.15; // same scaling style as Novice Hunter
+      const count = state.upgrades.reduceCooldownCount || 0;
+      return Math.floor(baseCost * Math.pow(scaling, count));
     }
 
     function canHuntClick() {
@@ -232,15 +241,21 @@
       const upgradesArea = document.getElementById("upgradesArea");
       const reduceRow = document.getElementById("upgradeReduceCooldown");
       const reduceBtn = document.getElementById("buyReduceCooldownBtn");
-      const reduceCost = 10;
-      const reduceAvailable = !state.upgrades.reduceCooldownPurchased && state.credits >= reduceCost;
-      if (reduceRow) {
-        reduceRow.style.display = (!state.upgrades.reduceCooldownPurchased && (state.credits >= reduceCost)) ? "" : "none";
-        if (reduceBtn) reduceBtn.disabled = state.credits < reduceCost;
+      const reduceCostSpan = document.getElementById("reduceCooldownCostSpan");
+      const baseRevealCost = 10;
+      // Reveal the Upgrades card the first time player reaches 10 credits
+      if (!state.flags.upgradesRevealed && state.credits >= baseRevealCost) {
+        state.flags.upgradesRevealed = true;
+        try { save(); } catch {}
       }
       if (upgradesArea) {
-        // Show the card if any upgrade is available (or keep visible if more upgrades later)
-        upgradesArea.style.display = (!state.upgrades.reduceCooldownPurchased && state.credits >= reduceCost) ? "" : "none";
+        upgradesArea.style.display = state.flags.upgradesRevealed ? "" : "none";
+      }
+      if (reduceRow) {
+        reduceRow.style.display = state.flags.upgradesRevealed ? "" : "none";
+        const cost = getReduceCooldownCost();
+        if (reduceCostSpan) reduceCostSpan.textContent = `Cost ${cost}`;
+        if (reduceBtn) reduceBtn.disabled = state.credits < cost;
       }
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
@@ -327,16 +342,15 @@
       });
     }
 
-    // Upgrades: Reduce Cooldown purchase handler
+    // Upgrades: Reduce Cooldown purchase handler (repeatable with scaling cost)
     const buyReduceCooldownBtn = document.getElementById("buyReduceCooldownBtn");
     if (buyReduceCooldownBtn) {
       buyReduceCooldownBtn.addEventListener("click", () => {
-        const cost = 10;
-        if (state.upgrades.reduceCooldownPurchased) return;
+        const cost = getReduceCooldownCost();
         if (state.credits < cost) return;
         state.credits -= cost;
-        state.upgrades.reduceCooldownPurchased = true;
-        // Apply 5% reduction to cooldown
+        state.upgrades.reduceCooldownCount = (state.upgrades.reduceCooldownCount || 0) + 1;
+        // Apply 5% reduction to cooldown (multiplicative)
         const oldCd = state.huntCooldownMs || 1000;
         const newCd = Math.max(100, Math.round(oldCd * 0.95));
         state.huntCooldownMs = newCd;
@@ -430,6 +444,12 @@
           for (let i = 0; i < crewTypes.length; ++i) {
             Object.assign(crewTypes[i], data.crewTypes[i]);
           }
+        }
+        // Migrate legacy single-purchase flag to count
+        if (state.upgrades && state.upgrades.reduceCooldownPurchased && state.upgrades.reduceCooldownCount == null) {
+          state.upgrades.reduceCooldownCount = 1;
+          delete state.upgrades.reduceCooldownPurchased;
+          state.flags.upgradesRevealed = true;
         }
       } catch {}
     }
