@@ -25,9 +25,20 @@
       /* Use tabular numbers for credit display */
       .num { font-variant-numeric: tabular-nums; }
       /* Style the button */
-      button { padding: 10px 12px; border-radius: 10px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer; }
+      button { padding: 10px 12px; border-radius: 10px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer; position: relative; overflow: hidden; }
       /* Button hover effect */
       button:hover { background: #20212a; }
+      /* Disabled buttons */
+      button[disabled] { opacity: 0.65; cursor: not-allowed; }
+      button[disabled]:hover { background: #1b1b25; }
+      /* Hunt button cooldown overlay (width driven by --cdw) */
+      #huntBtn::after {
+        content: "";
+        position: absolute; left: 0; top: 0; bottom: 0; width: var(--cdw, 0%);
+        background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.12) 100%);
+        transition: width 40ms linear;
+        pointer-events: none;
+      }
     </style>
   <body>
     <!-- Main wrapper for page content -->
@@ -120,6 +131,8 @@
       ticks: 0,
       unbanked: 0,
       clickMultiplier: 100000,
+      huntCooldownMs: 1000,
+      huntReadyAt: 0,
       flags: {
         contractsUnlocked: false,
         contractsHintRemoved: false,
@@ -141,6 +154,15 @@
     // Base click value (kept in one place for parity across buttons)
     function getClickValue() {
       return 1 * (state.clickMultiplier || 1);
+    }
+
+    function canHuntClick() {
+      return Date.now() >= (state.huntReadyAt || 0);
+    }
+
+    function startHuntCooldown() {
+      state.huntReadyAt = Date.now() + (state.huntCooldownMs || 1000);
+      updateCooldownVisual();
     }
 
     function updateUI() {
@@ -187,6 +209,10 @@
       if (contractClickBtn) {
         contractClickBtn.style.display = state.contractActive ? "" : "none";
       }
+      const huntBtnEl = document.getElementById("huntBtn");
+      if (huntBtnEl) {
+        huntBtnEl.disabled = !canHuntClick();
+      }
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
       const contractArea = document.getElementById("contractArea");
@@ -232,7 +258,9 @@
 
     // Actions
     $("huntBtn").addEventListener("click", () => {
+      if (!canHuntClick()) return;
       state.credits += getClickValue();
+      startHuntCooldown();
       updateUI();
     });
 
@@ -357,6 +385,8 @@
     // Load once, then autosave every 30s
     load();
     updateUI();
+    // Ensure cooldown reflects saved/initial state
+    updateCooldownVisual();
     function updateLastSaved() {
       const el = document.getElementById("lastSaved");
       if (!el) return;
@@ -379,6 +409,25 @@
       el.textContent = message;
       el.style.opacity = "1";
       setTimeout(() => { el.style.opacity = "0"; }, 3000);
+    }
+
+    // Smoothly update hunt cooldown visual and disabled state
+    function updateCooldownVisual() {
+      const btn = document.getElementById("huntBtn");
+      if (!btn) return;
+      const now = Date.now();
+      const readyAt = state.huntReadyAt || 0;
+      if (now >= readyAt) {
+        btn.style.setProperty('--cdw', '0%');
+        btn.disabled = false;
+        return;
+      }
+      const total = state.huntCooldownMs || 1000;
+      const elapsed = Math.max(0, total - (readyAt - now));
+      const pct = Math.max(0, Math.min(1, elapsed / total));
+      btn.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
+      btn.disabled = true;
+      requestAnimationFrame(updateCooldownVisual);
     }
 
     let autosaveEnabled = true;
