@@ -149,7 +149,7 @@
         id: "doubleClick",
         name: "Double Click Power",
         baseCost: 20,
-        scaling: 2.0,
+        scaling: 2.5,
         description: "Multiplies click power by 2",
       },
       // Future upgrades can be added here
@@ -209,17 +209,19 @@
     function updateCooldownFromUpgrades() {
       const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
       const linearFactor = Math.max(0, 1 - 0.05 * count);
-      // Update only the 'action' type cooldown; others remain base
-      const action = state.cooldowns && state.cooldowns.action;
-      if (action) {
-        const oldCd = action.ms || BASE_HUNT_COOLDOWN_MS;
-        const newCd = Math.max(100, Math.round((action.baseMs || BASE_HUNT_COOLDOWN_MS) * linearFactor));
-        action.ms = newCd;
-        const now = Date.now();
-        if (action.readyAt && action.readyAt > now) {
-          const remaining = action.readyAt - now;
-          const scaled = Math.round(remaining * (newCd / oldCd));
-          action.readyAt = now + Math.max(0, scaled);
+      if (!state.cooldowns || typeof state.cooldowns !== 'object') return;
+      const now = Date.now();
+      for (const key of Object.keys(state.cooldowns)) {
+        const cd = state.cooldowns[key];
+        if (!cd) continue;
+        const base = cd.baseMs || BASE_HUNT_COOLDOWN_MS;
+        const oldMs = cd.ms || base;
+        const newMs = Math.max(100, Math.round(base * linearFactor));
+        cd.ms = newMs;
+        if (cd.readyAt && cd.readyAt > now) {
+          const remaining = cd.readyAt - now;
+          const scaled = Math.round(remaining * (newMs / oldMs));
+          cd.readyAt = now + Math.max(0, scaled);
         }
       }
     }
