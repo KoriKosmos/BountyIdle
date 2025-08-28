@@ -33,6 +33,8 @@
     <!-- Main wrapper for page content -->
   <!-- Reset Save Button in top right -->
   <button id="resetBtn" style="position: absolute; top: 18px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer;">Reset Save</button>
+  <div id="lastSaved" style="position: absolute; top: 54px; right: 24px; color: #aaa; font-size: 13px;">Last saved just now</div>
+  <div id="autosavePopup" style="position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: #232333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 1000;">Game autosaved!</div>
   <div style="display: flex; flex-direction: row;">
     <!-- Crew Sidebar -->
     <div id="crewArea" class="card" style="min-width: 200px; margin: 18px 0 18px 24px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
@@ -206,10 +208,34 @@
       } catch {}
     }
 
-    // Load once, then autosave every 60s
+    // Track last save time
+    let lastSaveTime = Date.now();
+
+    // Load once, then autosave every 30s
     load();
     updateUI();
-    const autosaveId = setInterval(save, 60_000);
+    function updateLastSaved() {
+      const el = document.getElementById("lastSaved");
+      if (!el) return;
+      const secs = Math.floor((Date.now() - lastSaveTime) / 1000);
+      el.textContent = secs === 0 ? "Last saved just now" : `Last saved ${secs} seconds ago`;
+    }
+    setInterval(updateLastSaved, 1000);
+
+    function showAutosavePopup() {
+      const popup = document.getElementById("autosavePopup");
+      if (!popup) return;
+      popup.style.opacity = "1";
+      setTimeout(() => { popup.style.opacity = "0"; }, 3000);
+    }
+
+    function autosave() {
+      save();
+      lastSaveTime = Date.now();
+      updateLastSaved();
+      showAutosavePopup();
+    }
+    const autosaveId = setInterval(autosave, 30_000);
 
     // Save when tab is hidden, unless we are resetting
     const onVis = () => {
