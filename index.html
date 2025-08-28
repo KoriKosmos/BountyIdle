@@ -74,7 +74,7 @@
         </div>
         <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
           <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
-          <div>New contracts will appear here!</div>
+          <div id="contractsHint">New contracts will appear here!</div>
           <div id="contractArea"></div>
         </div>
       </div>
@@ -177,6 +177,11 @@
           contractsBox.style.display = "";
           state.flags.contractsUnlocked = true;
           localStorage.setItem("contractsUnlocked", "true");
+          // Hide contracts hint after first contract taken
+          const contractsHint = document.getElementById("contractsHint");
+          if (contractsHint) {
+            contractsHint.style.display = state.contractActive || state.contractProgress > 0 ? "none" : "";
+          }
           // Contract UI
           if (contractArea) {
             const contract = contracts[state.currentContract];
