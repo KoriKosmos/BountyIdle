@@ -55,12 +55,12 @@
       <div id="crewArea" class="card" style="width: 200px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
         <h1 style="font-size: 26px; margin: 0 0 18px 0;">Crew</h1>
         <div id="hireRow" style="margin-bottom: 16px; display:none; width: 100%;">
-          <div style="display: flex; align-items: center;">
-            <button id="hireBtn" style="margin-left: 0;">Hire Novice Hunter</button>
-            <span id="hireCostSpan" style="margin-left: 12px;">Hired: 0</span>
-          </div>
-          <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
-          <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Cost: 20</div>
+        <div style="display: flex; align-items: center;">
+          <button id="hireBtn" style="margin-left: 0;">Hire Novice Hunter</button>
+          <span id="hireCostSpan" style="margin-left: 12px;">Cost: 20</span>
+        </div>
+        <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
+        <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Hired: 0</div>
         </div>
       </div>
       <div id="upgradesArea" class="card" style="width: 220px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
@@ -95,7 +95,7 @@
           </div>
           <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
             <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
-            <div id="contractsHint">New contracts will appear here!</div>
+            <div id="contractsHint">New contracts will appear here!<br><span style="color:#ffb300;font-weight:bold;">WARNING: Contracts take a long time to fulfill!</span></div>
             <div id="contractArea"></div>
           </div>
         </div>
@@ -205,18 +205,18 @@
       const hireCostSpan = document.getElementById("hireCostSpan");
       const hireCostBelow = document.getElementById("hireCostBelow");
       if (hireCostSpan) {
-        hireCostSpan.textContent = `Hired: ${novice.count}`;
+        hireCostSpan.textContent = `Cost: ${getCrewCost(novice)}`;
       }
       if (hireCostBelow) {
-        hireCostBelow.textContent = `Cost: ${getCrewCost(novice)}`;
+        hireCostBelow.textContent = `Hired: ${novice.count}`;
       }
       const hirePerTick = document.getElementById("hirePerTick");
       if (hirePerTick) {
         if (novice.count === 0) {
-          hirePerTick.textContent = `+${novice.perTick} credits/tick`;
+          hirePerTick.innerHTML = `<span style='color:#9aa;'>+${novice.perTick}</span> credits/tick`;
         } else {
           const totalPerTick = (novice.count * novice.perTick).toFixed(1);
-          hirePerTick.textContent = `+${totalPerTick} credits/tick`;
+          hirePerTick.innerHTML = `<span style='color:#9aa;'>+${totalPerTick}</span> credits/tick`;
         }
       }
       const hireRow = document.getElementById("hireRow");
