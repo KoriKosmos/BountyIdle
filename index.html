@@ -145,6 +145,13 @@
         scaling: 1.15,
         description: "Reduces button click cooldown by 5%",
       },
+      {
+        id: "doubleClick",
+        name: "Double Click Power",
+        baseCost: 20,
+        scaling: 2.0,
+        description: "Multiplies click power by 2",
+      },
       // Future upgrades can be added here
     ];
 
@@ -209,6 +216,15 @@
         const scaled = Math.round(remaining * (newCd / oldCd));
         state.huntReadyAt = now + Math.max(0, scaled);
       }
+    }
+
+    // Recalculate click multiplier from upgrades (2x per purchase)
+    function updateClickPowerFromUpgrades() {
+      if (!state.buttonTypes || !state.buttonTypes.action) {
+        state.buttonTypes = { action: { base: 1, multiplier: 1 } };
+      }
+      const count = (state.upgrades && state.upgrades.doubleClick) || 0;
+      state.buttonTypes.action.multiplier = Math.pow(2, count || 0);
     }
 
     function canHuntClick() {
@@ -409,6 +425,10 @@
           updateCooldownFromUpgrades();
           break;
         }
+        case 'doubleClick': {
+          updateClickPowerFromUpgrades();
+          break;
+        }
         default:
           break;
       }
@@ -520,6 +540,8 @@
         }
         // Ensure cooldown matches flat reductions from upgrades
         updateCooldownFromUpgrades();
+        // Ensure click power multiplier reflects upgrades
+        updateClickPowerFromUpgrades();
       } catch {}
     }
 
