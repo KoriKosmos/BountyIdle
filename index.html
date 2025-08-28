@@ -62,6 +62,17 @@
         <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Cost 20</div>
       </div>
     </div>
+    <!-- Upgrades Sidebar -->
+    <div id="upgradesArea" class="card" style="min-width: 220px; margin: 18px 0; margin-left: 12px; display: none; flex-direction: column; align-items: flex-start; padding: 18px;">
+      <h1 style="font-size: 26px; margin: 0 0 18px 0;">Upgrades</h1>
+      <div id="upgradeReduceCooldown" style="display:none; width: 100%;">
+        <div style="display: flex; align-items: center;">
+          <button id="buyReduceCooldownBtn" style="margin-left: 0;">Reduce Cooldown</button>
+          <span id="reduceCooldownCostSpan" style="margin-left: 12px;">Cost 10</span>
+        </div>
+        <div style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Reduces button click cooldown by 5%</div>
+      </div>
+    </div>
     <!-- Main wrapper for page content -->
     <div class="wrap" style="flex: 1;">
       <!-- Page title -->
@@ -130,9 +141,12 @@
       credits: 0,
       ticks: 0,
       unbanked: 0,
-      clickMultiplier: 100000,
+      clickMultiplier: 1,
       huntCooldownMs: 1000,
       huntReadyAt: 0,
+      upgrades: {
+        reduceCooldownPurchased: false,
+      },
       flags: {
         contractsUnlocked: false,
         contractsHintRemoved: false,
@@ -212,6 +226,21 @@
       const huntBtnEl = document.getElementById("huntBtn");
       if (huntBtnEl) {
         huntBtnEl.disabled = !canHuntClick();
+      }
+
+      // Upgrades UI
+      const upgradesArea = document.getElementById("upgradesArea");
+      const reduceRow = document.getElementById("upgradeReduceCooldown");
+      const reduceBtn = document.getElementById("buyReduceCooldownBtn");
+      const reduceCost = 10;
+      const reduceAvailable = !state.upgrades.reduceCooldownPurchased && state.credits >= reduceCost;
+      if (reduceRow) {
+        reduceRow.style.display = (!state.upgrades.reduceCooldownPurchased && (state.credits >= reduceCost)) ? "" : "none";
+        if (reduceBtn) reduceBtn.disabled = state.credits < reduceCost;
+      }
+      if (upgradesArea) {
+        // Show the card if any upgrade is available (or keep visible if more upgrades later)
+        upgradesArea.style.display = (!state.upgrades.reduceCooldownPurchased && state.credits >= reduceCost) ? "" : "none";
       }
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
@@ -295,6 +324,32 @@
         const progressNum = document.getElementById('contractProgressNum');
         if (progressNum) progressNum.textContent = state.contractProgress;
         updateUI();
+      });
+    }
+
+    // Upgrades: Reduce Cooldown purchase handler
+    const buyReduceCooldownBtn = document.getElementById("buyReduceCooldownBtn");
+    if (buyReduceCooldownBtn) {
+      buyReduceCooldownBtn.addEventListener("click", () => {
+        const cost = 10;
+        if (state.upgrades.reduceCooldownPurchased) return;
+        if (state.credits < cost) return;
+        state.credits -= cost;
+        state.upgrades.reduceCooldownPurchased = true;
+        // Apply 5% reduction to cooldown
+        const oldCd = state.huntCooldownMs || 1000;
+        const newCd = Math.max(100, Math.round(oldCd * 0.95));
+        state.huntCooldownMs = newCd;
+        // If currently cooling down, scale remaining time proportionally
+        const now = Date.now();
+        if (state.huntReadyAt && state.huntReadyAt > now) {
+          const remaining = state.huntReadyAt - now;
+          const scaled = Math.round(remaining * 0.95);
+          state.huntReadyAt = now + Math.max(0, scaled);
+        }
+        try { save(); } catch {}
+        updateUI();
+        showToast("Upgrade purchased: Cooldown -5%");
       });
     }
 
