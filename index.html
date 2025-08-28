@@ -73,6 +73,7 @@
       unbanked: 0,
       passivePerTick: 0,
       noviceCount: 0, // Number of Novice Hunters hired
+      hireRevealed: false, // Tracks if hire button has ever been revealed
     };
 
     const $ = id => document.getElementById(id);
@@ -98,9 +99,10 @@
 
       const hireRow = document.getElementById("hireRow");
       if (hireRow) {
-        // Show the hire button once credits >= cost, and keep it visible after that
-        if (state.credits >= getNoviceCost() || hireRow.style.display === "") {
+        // Track if the hire button has ever been revealed
+        if (state.hireRevealed || state.credits >= getNoviceCost()) {
           hireRow.style.display = "";
+          state.hireRevealed = true;
         } else {
           hireRow.style.display = "none";
         }
