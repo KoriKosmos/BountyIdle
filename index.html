@@ -109,6 +109,8 @@
     const SAVE_KEY = "bountySaveV1";
     // Base cooldown for hunt/actions (used for flat % reductions)
     const BASE_HUNT_COOLDOWN_MS = 1000;
+    // Max purchases for reduce-cooldown: 20th removes cooldown entirely
+    const REDUCE_CD_MAX_COUNT = 20;
 
     // Crew types data structure
     const crewTypes = [
@@ -208,7 +210,7 @@
     // Recalculate cooldown from upgrades using flat -5% per purchase from base
     function updateCooldownFromUpgrades() {
       const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
-      const linearFactor = Math.max(0, 1 - 0.05 * count);
+      const linearFactor = count >= REDUCE_CD_MAX_COUNT ? 0 : Math.max(0, 1 - 0.05 * count);
       if (!state.cooldowns || typeof state.cooldowns !== 'object') return;
       const now = Date.now();
       for (const key of Object.keys(state.cooldowns)) {
@@ -216,12 +218,16 @@
         if (!cd) continue;
         const base = cd.baseMs || BASE_HUNT_COOLDOWN_MS;
         const oldMs = cd.ms || base;
-        const newMs = Math.max(100, Math.round(base * linearFactor));
+        const newMs = linearFactor === 0 ? 0 : Math.max(100, Math.round(base * linearFactor));
         cd.ms = newMs;
         if (cd.readyAt && cd.readyAt > now) {
-          const remaining = cd.readyAt - now;
-          const scaled = Math.round(remaining * (newMs / oldMs));
-          cd.readyAt = now + Math.max(0, scaled);
+          if (newMs === 0) {
+            cd.readyAt = now; // instantly ready
+          } else {
+            const remaining = cd.readyAt - now;
+            const scaled = Math.round(remaining * (newMs / oldMs));
+            cd.readyAt = now + Math.max(0, scaled);
+          }
         }
       }
     }
@@ -309,16 +315,22 @@
           let extra = "";
           if (up.id === 'reduceCooldown') {
             const count = (state.upgrades && state.upgrades[up.id]) || 0;
-            const net = Math.min(95, 5 * count);
+            const net = Math.min(100, 5 * count);
             extra = ` <span style='color:#9aa;'>• Net: ${net}%</span>`;
+          }
+          // Determine maxed state (for reduceCooldown)
+          let isMaxed = false;
+          if (up.id === 'reduceCooldown') {
+            const count = (state.upgrades && state.upgrades[up.id]) || 0;
+            isMaxed = count >= REDUCE_CD_MAX_COUNT;
           }
           const count = (state.upgrades && state.upgrades[up.id]) || 0;
           const shouldShow = count > 0 || state.credits >= up.baseCost;
           if (!shouldShow) continue;
           html += `<div class='upgradeRow' style='margin-bottom: 12px;'>
-            <div style='display:flex; align-items:center;'>
-              <button data-upgrade-id='${up.id}' ${disabled} style='margin-left:0;'>${up.name}</button>
-              <span style='margin-left:12px;'>Cost: ${cost}</span>
+            <div style='display:flex; align-items:center; ${isMaxed ? "opacity:0.6;" : ""}'>
+              <button data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""} style='margin-left:0;'>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
+              <span style='margin-left:12px;'>${isMaxed ? '' : `Cost: ${cost}`}</span>
             </div>
             <div style='font-size:13px; color:#aaa; margin-top:2px; margin-left:2px;'>${up.description}${extra}</div>
           </div>`;
@@ -422,6 +434,11 @@
       if (!upId) return;
       const up = upgradeTypes.find(u => u.id === upId);
       if (!up) return;
+      // Prevent purchases when maxed (reduceCooldown)
+      if (upId === 'reduceCooldown') {
+        const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
+        if (count >= REDUCE_CD_MAX_COUNT) return;
+      }
       const cost = getUpgradeCost(up);
       if (state.credits < cost) return;
       state.credits -= cost;
@@ -619,9 +636,9 @@
         const type = b.getAttribute('data-cooldown-type') || 'action';
         const cd = state.cooldowns && state.cooldowns[type];
         if (!cd) continue;
-        const total = cd.ms || BASE_HUNT_COOLDOWN_MS;
+        const total = (cd.ms != null) ? cd.ms : BASE_HUNT_COOLDOWN_MS;
         const readyAt = cd.readyAt || 0;
-        if (now >= readyAt) {
+        if (total === 0 || now >= readyAt) {
           b.style.setProperty('--cdw', '0%');
           b.disabled = false;
         } else {
