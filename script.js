@@ -1,0 +1,616 @@
+// Save key for localStorage
+const SAVE_KEY = "bountySaveV1";
+// Base cooldown for hunt/actions (used for flat % reductions)
+const BASE_HUNT_COOLDOWN_MS = 1000;
+// Max purchases for reduce-cooldown: 20th removes cooldown entirely
+const REDUCE_CD_MAX_COUNT = 20;
+
+// Crew types data structure
+const crewTypes = [
+  {
+    id: "novice",
+    name: "Novice Hunter",
+    baseCost: 20,
+    scaling: 1.15,
+    perTick: 0.5,
+    count: 0,
+    revealed: false,
+  },
+  // Future crew types can be added here
+];
+
+// Contracts data structure
+const contracts = [
+  {
+    id: "familiar-face",
+    description: "A familiar face enters the office",
+    details: "You meet an old friend who needs help with a bounty. Complete the contract to earn a hefty reward.",
+    goal: 1000,
+    reward: 2000,
+  },
+  // Add more contracts here!
+];
+
+// Upgrade types data structure (scalable like crew types)
+const upgradeTypes = [
+  {
+    id: "reduceCooldown",
+    name: "Reduce Cooldown",
+    baseCost: 10,
+    scaling: 1.15,
+    description: "Reduces button click cooldown by 5%",
+  },
+  {
+    id: "doubleClick",
+    name: "Double Click Power",
+    baseCost: 20,
+    scaling: 2.5,
+    description: "Multiplies click power by 2",
+  },
+  // Future upgrades can be added here
+];
+
+// Game state
+const state = {
+  credits: 0,
+  ticks: 0,
+  unbanked: 0,
+  // Shared button type multipliers
+  buttonTypes: {
+    // Action-type buttons: hunt, advance contract, etc.
+    action: { base: 1, multiplier: 1 },
+  },
+  cooldowns: {
+    action: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+    hire: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+  },
+  upgrades: {}, // map of upgradeId -> count
+  flags: {
+    contractsUnlocked: false,
+    contractsHintRemoved: false,
+    upgradesRevealed: false,
+  },
+  contractActive: false,
+  contractProgress: 0,
+  currentContract: 0, // index in contracts array
+};
+
+const $ = id => document.getElementById(id);
+const fmt0 = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+const fmt1 = n => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+// Calculate the cost for a crew type
+function getCrewCost(crew) {
+  return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
+}
+
+// Button type click value
+function getButtonValue(typeId) {
+  const t = (state.buttonTypes && state.buttonTypes[typeId]) || { base: 1, multiplier: 1 };
+  return (t.base || 1) * (t.multiplier || 1);
+}
+// Back-compat/shortcut for action type
+function getClickValue() {
+  return getButtonValue('action');
+}
+
+// Generic upgrade cost calculation
+function getUpgradeCost(upgrade) {
+  const count = (state.upgrades && state.upgrades[upgrade.id]) || 0;
+  return Math.floor(upgrade.baseCost * Math.pow(upgrade.scaling, count));
+}
+
+// Recalculate cooldown from upgrades using flat -5% per purchase from base
+function updateCooldownFromUpgrades() {
+  const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
+  const linearFactor = count >= REDUCE_CD_MAX_COUNT ? 0 : Math.max(0, 1 - 0.05 * count);
+  if (!state.cooldowns || typeof state.cooldowns !== 'object') return;
+  const now = Date.now();
+  for (const key of Object.keys(state.cooldowns)) {
+    const cd = state.cooldowns[key];
+    if (!cd) continue;
+    const base = cd.baseMs || BASE_HUNT_COOLDOWN_MS;
+    const oldMs = cd.ms || base;
+    const newMs = linearFactor === 0 ? 0 : Math.max(100, Math.round(base * linearFactor));
+    cd.ms = newMs;
+    if (cd.readyAt && cd.readyAt > now) {
+      if (newMs === 0) {
+        cd.readyAt = now; // instantly ready
+      } else {
+        const remaining = cd.readyAt - now;
+        const scaled = Math.round(remaining * (newMs / oldMs));
+        cd.readyAt = now + Math.max(0, scaled);
+      }
+    }
+  }
+}
+
+// Recalculate click multiplier from upgrades (2x per purchase)
+function updateClickPowerFromUpgrades() {
+  if (!state.buttonTypes || !state.buttonTypes.action) {
+    state.buttonTypes = { action: { base: 1, multiplier: 1 } };
+  }
+  const count = (state.upgrades && state.upgrades.doubleClick) || 0;
+  state.buttonTypes.action.multiplier = Math.pow(2, count || 0);
+}
+
+function canClick(typeId) {
+  const cd = (state.cooldowns && state.cooldowns[typeId]) || { readyAt: 0 };
+  return Date.now() >= (cd.readyAt || 0);
+}
+
+function startCooldown(typeId) {
+  if (!state.cooldowns || !state.cooldowns[typeId]) return;
+  const cd = state.cooldowns[typeId];
+  const dur = (cd.ms != null) ? cd.ms : BASE_HUNT_COOLDOWN_MS;
+  cd.readyAt = Date.now() + dur;
+  updateCooldownVisual();
+}
+// Back-compat wrappers
+function canHuntClick() { return canClick('action'); }
+function startHuntCooldown() { return startCooldown('action'); }
+
+function updateUI() {
+  $("credits").textContent = fmt0(state.credits);
+  $("ticks").textContent = fmt0(state.ticks);
+  const u = document.getElementById("unbanked");
+  if (u) u.textContent = fmt1(state.unbanked);
+
+  // Novice Hunter UI
+  const novice = crewTypes[0];
+  const hireCostSpan = document.getElementById("hireCostSpan");
+  const hireCostBelow = document.getElementById("hireCostBelow");
+  if (hireCostSpan) {
+    hireCostSpan.textContent = `Cost: ${getCrewCost(novice)}`;
+  }
+  if (hireCostBelow) {
+    hireCostBelow.textContent = `Hired: ${novice.count}`;
+  }
+  const hirePerTick = document.getElementById("hirePerTick");
+  if (hirePerTick) {
+    if (novice.count === 0) {
+      hirePerTick.innerHTML = `<span style='color:#9aa;'>+${novice.perTick}</span> credits/tick`;
+    } else {
+      const totalPerTick = (novice.count * novice.perTick).toFixed(1);
+      hirePerTick.innerHTML = `<span style='color:#9aa;'>+${totalPerTick}</span> credits/tick`;
+    }
+  }
+  const hireRow = document.getElementById("hireRow");
+  if (hireRow) {
+    if (novice.revealed || state.credits >= getCrewCost(novice)) {
+      hireRow.style.display = "";
+      novice.revealed = true;
+    } else {
+      hireRow.style.display = "none";
+    }
+  }
+  // Update click info text and toggle contract click button
+  const clickInfo = document.getElementById("clickInfo");
+  if (clickInfo) {
+    const val = getClickValue();
+    clickInfo.textContent = `+${fmt0(val)} credit`;
+  }
+  const contractClickBtn = document.getElementById("contractClickBtn");
+  if (contractClickBtn) {
+    contractClickBtn.style.display = state.contractActive ? "" : "none";
+  }
+
+  // Upgrades UI
+  const upgradesArea = document.getElementById("upgradesArea");
+  const upgradeArea = document.getElementById("upgradeArea");
+  if (upgradeArea) {
+    // Render all upgrades
+    let html = "";
+    for (const up of upgradeTypes) {
+      const cost = getUpgradeCost(up);
+      const disabled = state.credits < cost ? "disabled" : "";
+      // Extra info: for reduceCooldown, show net reduction
+      let extra = "";
+      if (up.id === 'reduceCooldown') {
+        const count = (state.upgrades && state.upgrades[up.id]) || 0;
+        const net = Math.min(100, 5 * count);
+        extra = ` <span style='color:#9aa;'>• Net: ${net}%</span>`;
+      }
+      // Determine maxed state (for reduceCooldown)
+      let isMaxed = false;
+      if (up.id === 'reduceCooldown') {
+        const count = (state.upgrades && state.upgrades[up.id]) || 0;
+        isMaxed = count >= REDUCE_CD_MAX_COUNT;
+      }
+      const count = (state.upgrades && state.upgrades[up.id]) || 0;
+      const shouldShow = count > 0 || state.credits >= up.baseCost;
+      if (!shouldShow) continue;
+      html += `<div class='upgradeRow' style='margin-bottom: 12px;'>
+        <div style='display:flex; align-items:center; ${isMaxed ? "opacity:0.6;" : ""}'>
+          <button data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""} style='margin-left:0;'>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
+          <span style='margin-left:12px;'>${isMaxed ? '' : `Cost: ${cost}`}</span>
+        </div>
+        <div style='font-size:13px; color:#aaa; margin-top:2px; margin-left:2px;'>${up.description}${extra}</div>
+      </div>`;
+    }
+    upgradeArea.innerHTML = html;
+  }
+  // Contracts box logic (flag system, any crew type >= 10)
+  const contractsBox = document.getElementById("contractsBox");
+  const contractArea = document.getElementById("contractArea");
+  if (contractsBox) {
+    // Unlock when condition met, otherwise respect saved flag
+    if (!state.flags.contractsUnlocked && crewTypes.some(c => c.count >= 10)) {
+      state.flags.contractsUnlocked = true;
+      // Persist immediately so refresh keeps it
+      try { save(); } catch {}
+      // Show one-time toast when contracts unlock
+      try { showToast("Contracts unlocked!"); } catch {}
+    }
+
+    if (state.flags.contractsUnlocked) {
+      contractsBox.style.display = "";
+      // Hide hint permanently once first contract is taken
+      const contractsHint = document.getElementById("contractsHint");
+      if (contractsHint) {
+        if (state.flags.contractsHintRemoved) {
+          contractsHint.remove();
+        }
+      }
+      // Contract UI
+      if (contractArea) {
+        const contract = contracts[state.currentContract];
+        if (!state.contractActive) {
+          contractArea.innerHTML = `<div style='display: flex; align-items: center; margin-top: 12px;'>
+            <button id='takeContractBtn' class='cooldownable' data-cooldown-type='action' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
+            <span style='margin-left: 16px;'>${contract.description}</span>
+          </div>`;
+        } else {
+          contractArea.innerHTML = `<div style='margin-top: 12px;'>
+            <div style='margin-bottom: 8px;'>${contract.details}</div>
+            <div>Progress: <strong id='contractProgressNum'>${state.contractProgress}</strong> / ${contract.goal}</div>
+          </div>`;
+        }
+      }
+    } else {
+      contractsBox.style.display = "none";
+    }
+  }
+}
+
+// Actions
+$("huntBtn").addEventListener("click", () => {
+  if (!canClick('action')) return;
+  state.credits += getClickValue();
+  startCooldown('action');
+  updateUI();
+});
+
+const hireBtn = document.getElementById("hireBtn");
+if (hireBtn) {
+  hireBtn.addEventListener("click", () => {
+    if (!canClick('hire')) return;
+    const novice = crewTypes[0];
+    const cost = getCrewCost(novice);
+    if (state.credits < cost) return;
+    state.credits -= cost;
+    novice.count += 1;
+    startCooldown('hire');
+    updateUI();
+  });
+}
+
+// Contract click button: contributes click value to contract progress
+const contractClickBtn = document.getElementById("contractClickBtn");
+if (contractClickBtn) {
+  contractClickBtn.addEventListener("click", () => {
+    if (!canClick('action')) return;
+    if (!state.contractActive) return;
+    const add = getClickValue();
+    const contract = contracts[state.currentContract];
+    state.contractProgress += add;
+    if (state.contractProgress >= contract.goal) {
+      state.contractProgress = contract.goal;
+      // Complete contract immediately on click
+      state.credits += contract.reward;
+      state.contractActive = false;
+      state.contractProgress = 0;
+    }
+    // Update progress number live if visible
+    const progressNum = document.getElementById('contractProgressNum');
+    if (progressNum) progressNum.textContent = state.contractProgress;
+    startCooldown('action');
+    updateUI();
+  });
+}
+
+// Upgrades: generic delegated purchase handler
+document.addEventListener('click', function(e) {
+  const target = e.target;
+  if (!(target instanceof HTMLElement)) return;
+  const upId = target.getAttribute('data-upgrade-id');
+  if (!upId) return;
+  const up = upgradeTypes.find(u => u.id === upId);
+  if (!up) return;
+  // Prevent purchases when maxed (reduceCooldown)
+  if (upId === 'reduceCooldown') {
+    const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
+    if (count >= REDUCE_CD_MAX_COUNT) return;
+  }
+  const cost = getUpgradeCost(up);
+  if (state.credits < cost) return;
+  state.credits -= cost;
+  state.upgrades[up.id] = (state.upgrades[up.id] || 0) + 1;
+  // Apply upgrade effect
+  applyUpgradeEffect(up.id);
+  try { save(); } catch {}
+  updateUI();
+  showToast(`Upgrade purchased: ${up.name}`);
+});
+
+function applyUpgradeEffect(id) {
+  switch (id) {
+    case 'reduceCooldown': {
+      // Apply flat -5% per purchase from base cooldown
+      updateCooldownFromUpgrades();
+      break;
+    }
+    case 'doubleClick': {
+      updateClickPowerFromUpgrades();
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+// Tick and banking
+const TICK_MS = 1000;
+const tickId = setInterval(() => {
+  state.ticks += 1;
+
+  // If contract is active, increment contract progress instead of credits
+  if (state.contractActive) {
+    const contract = contracts[state.currentContract];
+    let contractPerTick = 0;
+    for (const crew of crewTypes) {
+      contractPerTick += crew.count * crew.perTick;
+    }
+    state.contractProgress += contractPerTick;
+    // Clamp progress
+    if (state.contractProgress >= contract.goal) {
+      state.contractProgress = contract.goal;
+      // Award credits and end contract
+      state.credits += contract.reward;
+      state.contractActive = false;
+      state.contractProgress = 0;
+    }
+  } else {
+    // Calculate passive income from all crew
+    let passivePerTick = 0;
+    for (const crew of crewTypes) {
+      passivePerTick += crew.count * crew.perTick;
+    }
+    state.unbanked += passivePerTick;
+
+    // Bank only whole credits
+    const whole = Math.floor(state.unbanked);
+    if (whole > 0) {
+      state.credits += whole;
+      state.unbanked -= whole;
+    }
+  }
+
+  updateUI();
+  // Update contract progress UI if active
+  if (state.contractActive) {
+    const progressNum = document.getElementById('contractProgressNum');
+    if (progressNum) progressNum.textContent = state.contractProgress;
+  }
+}, TICK_MS);
+// Take Contract button event (delegated)
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'takeContractBtn') {
+    if (!canClick('action')) return;
+    state.contractActive = true;
+    state.contractProgress = 0;
+    // Permanently remove hint after first contract is taken
+    state.flags.contractsHintRemoved = true;
+    const hintEl = document.getElementById('contractsHint');
+    if (hintEl) { try { hintEl.remove(); } catch {} }
+    try { save(); } catch {}
+    startCooldown('action');
+    updateUI();
+  }
+});
+
+// Persistence
+let suppressSaves = false;
+
+function save() {
+  if (suppressSaves) return;
+  // Save both state and crewTypes
+  localStorage.setItem(SAVE_KEY, JSON.stringify({ state, crewTypes }));
+}
+
+function load() {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    Object.assign(state, data.state || {});
+    if (Array.isArray(data.crewTypes)) {
+      for (let i = 0; i < crewTypes.length; ++i) {
+        Object.assign(crewTypes[i], data.crewTypes[i]);
+      }
+    }
+    // Ensure upgrades is an object map
+    if (!state.upgrades || typeof state.upgrades !== 'object') state.upgrades = {};
+    // Ensure buttonTypes exists
+    if (!state.buttonTypes || typeof state.buttonTypes !== 'object') {
+      state.buttonTypes = { action: { base: 1, multiplier: 1 } };
+    } else if (!state.buttonTypes.action) {
+      state.buttonTypes.action = { base: 1, multiplier: 1 };
+    }
+    // Ensure cooldowns structure exists and migrate legacy fields
+    if (!state.cooldowns || typeof state.cooldowns !== 'object') {
+      state.cooldowns = {
+        action: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+        hire: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+      };
+    }
+    if (typeof state.huntCooldownMs === 'number') {
+      // legacy field; map to action.ms (will be recalculated anyway)
+      state.cooldowns.action.ms = state.huntCooldownMs;
+      delete state.huntCooldownMs;
+    }
+    if (typeof state.huntReadyAt === 'number') {
+      state.cooldowns.action.readyAt = state.huntReadyAt;
+      delete state.huntReadyAt;
+    }
+    // Migrations from earlier structures
+    if (state.upgrades && state.upgrades.reduceCooldownPurchased && state.upgrades.reduceCooldown == null) {
+      state.upgrades.reduceCooldown = 1;
+      delete state.upgrades.reduceCooldownPurchased;
+      state.flags.upgradesRevealed = true;
+    }
+    if (state.upgrades && state.upgrades.reduceCooldownCount != null) {
+      state.upgrades.reduceCooldown = state.upgrades.reduceCooldownCount;
+      delete state.upgrades.reduceCooldownCount;
+      state.flags.upgradesRevealed = true;
+    }
+    // Migration: old clickMultiplier -> action button type multiplier
+    if (typeof state.clickMultiplier === 'number') {
+      state.buttonTypes.action.multiplier = state.clickMultiplier;
+      delete state.clickMultiplier;
+    }
+    // Ensure cooldown matches flat reductions from upgrades
+    updateCooldownFromUpgrades();
+    // Ensure click power multiplier reflects upgrades
+    updateClickPowerFromUpgrades();
+  } catch {}
+}
+
+// Track last save time
+let lastSaveTime = Date.now();
+
+// Load once, then autosave every 30s
+load();
+updateUI();
+// Ensure cooldown reflects saved/initial state
+updateCooldownFromUpgrades();
+updateClickPowerFromUpgrades();
+updateCooldownVisual();
+function updateLastSaved() {
+  const el = document.getElementById("lastSaved");
+  if (!el) return;
+  const secs = Math.floor((Date.now() - lastSaveTime) / 1000);
+  el.textContent = secs === 0 ? "Last saved just now" : `Last saved ${secs} seconds ago`;
+}
+setInterval(updateLastSaved, 1000);
+
+function showAutosavePopup() {
+  const popup = document.getElementById("autosavePopup");
+  if (!popup) return;
+  popup.style.opacity = "1";
+  setTimeout(() => { popup.style.opacity = "0"; }, 3000);
+}
+
+// Generic toast helper (separate from autosave)
+function showToast(message) {
+  const el = document.getElementById("gameToast");
+  if (!el) return;
+  el.textContent = message;
+  el.style.opacity = "1";
+  setTimeout(() => { el.style.opacity = "0"; }, 3000);
+}
+
+// Smoothly update hunt cooldown visual and disabled state
+function updateCooldownVisual() {
+  const now = Date.now();
+  const btns = document.querySelectorAll('button.cooldownable');
+  let anyCooling = false;
+  for (const b of btns) {
+    const type = b.getAttribute('data-cooldown-type') || 'action';
+    const cd = state.cooldowns && state.cooldowns[type];
+    if (!cd) continue;
+    const total = (cd.ms != null) ? cd.ms : BASE_HUNT_COOLDOWN_MS;
+    const readyAt = cd.readyAt || 0;
+    if (total === 0 || now >= readyAt) {
+      b.style.setProperty('--cdw', '0%');
+      b.disabled = false;
+    } else {
+      const elapsed = Math.max(0, total - (readyAt - now));
+      const pct = Math.max(0, Math.min(1, elapsed / total));
+      b.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
+      b.disabled = true;
+      anyCooling = true;
+    }
+  }
+  if (anyCooling) requestAnimationFrame(updateCooldownVisual);
+}
+
+let autosaveEnabled = true;
+let autosaveId = setInterval(autosave, 30_000);
+function autosave() {
+  if (!autosaveEnabled) return;
+  save();
+  lastSaveTime = Date.now();
+  updateLastSaved();
+  showAutosavePopup();
+}
+
+// Autosave toggle button functionality
+const autosaveToggleBtn = document.getElementById("autosaveToggleBtn");
+if (autosaveToggleBtn) {
+  autosaveToggleBtn.addEventListener("click", () => {
+    autosaveEnabled = !autosaveEnabled;
+    autosaveToggleBtn.textContent = autosaveEnabled ? "Autosave ON" : "Autosave OFF";
+    if (autosaveEnabled && !autosaveId) {
+      autosaveId = setInterval(autosave, 30_000);
+    } else if (!autosaveEnabled && autosaveId) {
+      clearInterval(autosaveId);
+      autosaveId = null;
+    }
+  });
+}
+
+// Save when tab is hidden, unless we are resetting
+const onVis = () => {
+  if (document.hidden && !suppressSaves) save();
+};
+document.addEventListener("visibilitychange", onVis);
+
+// Manual Save button functionality
+const manualSaveBtn = document.getElementById("manualSaveBtn");
+if (manualSaveBtn) {
+  manualSaveBtn.addEventListener("click", () => {
+    save();
+    lastSaveTime = Date.now();
+    updateLastSaved();
+    showAutosavePopup();
+  });
+}
+
+// Reset Save button functionality with 3-press failsafe
+const resetBtn = document.getElementById("resetBtn");
+let resetPressCount = 0;
+if (resetBtn) {
+  resetBtn.addEventListener("click", () => {
+    resetPressCount++;
+    if (resetPressCount < 3) {
+      resetBtn.textContent = `Reset Save (${3 - resetPressCount} more)`;
+      setTimeout(() => {
+        resetPressCount = 0;
+        resetBtn.textContent = "Reset Save";
+      }, 2000);
+      return;
+    }
+    // Block any further saves, stop timers, and unbind handlers
+    suppressSaves = true;
+    document.removeEventListener("visibilitychange", onVis);
+    clearInterval(autosaveId);
+    clearInterval(tickId);
+
+    // Remove save and legacy flags, then reload
+    localStorage.removeItem(SAVE_KEY);
+    // Clean up legacy key so unlock does not persist through resets
+    localStorage.removeItem("contractsUnlocked");
+    location.reload();
+  });
+}
