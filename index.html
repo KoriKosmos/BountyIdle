@@ -63,7 +63,8 @@
         </div>
         <div class="row">
           <button id="huntBtn">Hunt petty bounty</button>
-          <span>+1 credit</span>
+          <span id="clickInfo">+1 credit</span>
+          <button id="contractClickBtn" style="display:none; margin-left: 8px;">Advance contract</button>
         </div>
         <div class="row" style="display:none">
           <span>Ticks:</span>
@@ -118,6 +119,7 @@
       credits: 0,
       ticks: 0,
       unbanked: 0,
+      clickMultiplier: 100000,
       flags: {
         contractsUnlocked: false,
         contractsHintRemoved: false,
@@ -134,6 +136,11 @@
     // Calculate the cost for a crew type
     function getCrewCost(crew) {
       return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
+    }
+
+    // Base click value (kept in one place for parity across buttons)
+    function getClickValue() {
+      return 1 * (state.clickMultiplier || 1);
     }
 
     function updateUI() {
@@ -169,6 +176,16 @@
         } else {
           hireRow.style.display = "none";
         }
+      }
+      // Update click info text and toggle contract click button
+      const clickInfo = document.getElementById("clickInfo");
+      if (clickInfo) {
+        const val = getClickValue();
+        clickInfo.textContent = `+${fmt0(val)} credit`;
+      }
+      const contractClickBtn = document.getElementById("contractClickBtn");
+      if (contractClickBtn) {
+        contractClickBtn.style.display = state.contractActive ? "" : "none";
       }
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
@@ -215,7 +232,7 @@
 
     // Actions
     $("huntBtn").addEventListener("click", () => {
-      state.credits += 100000;
+      state.credits += getClickValue();
       updateUI();
     });
 
@@ -227,6 +244,28 @@
         if (state.credits < cost) return;
         state.credits -= cost;
         novice.count += 1;
+        updateUI();
+      });
+    }
+
+    // Contract click button: contributes click value to contract progress
+    const contractClickBtn = document.getElementById("contractClickBtn");
+    if (contractClickBtn) {
+      contractClickBtn.addEventListener("click", () => {
+        if (!state.contractActive) return;
+        const add = getClickValue();
+        const contract = contracts[state.currentContract];
+        state.contractProgress += add;
+        if (state.contractProgress >= contract.goal) {
+          state.contractProgress = contract.goal;
+          // Complete contract immediately on click
+          state.credits += contract.reward;
+          state.contractActive = false;
+          state.contractProgress = 0;
+        }
+        // Update progress number live if visible
+        const progressNum = document.getElementById('contractProgressNum');
+        if (progressNum) progressNum.textContent = state.contractProgress;
         updateUI();
       });
     }
