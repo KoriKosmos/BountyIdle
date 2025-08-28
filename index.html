@@ -72,6 +72,10 @@
           <span>Unbanked:</span>
           <strong class="num" id="unbanked">0.0</strong>
         </div>
+        <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
+          <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
+          <div>New contracts will appear here!</div>
+        </div>
       </div>
     </div>
   </div>
@@ -143,6 +147,16 @@
           novice.revealed = true;
         } else {
           hireRow.style.display = "none";
+        }
+      }
+      // Contracts box logic
+      const contractsBox = document.getElementById("contractsBox");
+      if (contractsBox) {
+        if (novice.count >= 10 || localStorage.getItem("contractsUnlocked") === "true") {
+          contractsBox.style.display = "";
+          localStorage.setItem("contractsUnlocked", "true");
+        } else {
+          contractsBox.style.display = "none";
         }
       }
     }
