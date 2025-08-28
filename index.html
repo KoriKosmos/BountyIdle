@@ -98,7 +98,7 @@
 
       const hireRow = document.getElementById("hireRow");
       if (hireRow) {
-        // Show the hire button once credits >= cost, and keep it visible forever after
+        // Show the hire button once credits >= cost, and keep it visible after that
         if (state.credits >= getNoviceCost() || hireRow.style.display === "") {
           hireRow.style.display = "";
         } else {
@@ -127,7 +127,7 @@
 
     // Tick and banking
     const TICK_MS = 1000;
-    setInterval(() => {
+    const tickId = setInterval(() => {
       state.ticks += 1;
 
       // Grow unbanked by passive income
@@ -144,7 +144,10 @@
     }, TICK_MS);
 
     // Persistence
+    let suppressSaves = false;
+
     function save() {
+      if (suppressSaves) return;
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     }
 
@@ -160,17 +163,25 @@
     // Load once, then autosave every 60s
     load();
     updateUI();
-    setInterval(save, 60_000);
+    const autosaveId = setInterval(save, 60_000);
 
-    // Optional: save when tab is hidden
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) save();
-    });
+    // Save when tab is hidden, unless we are resetting
+    const onVis = () => {
+      if (document.hidden && !suppressSaves) save();
+    };
+    document.addEventListener("visibilitychange", onVis);
 
     // Reset Save button functionality
     const resetBtn = document.getElementById("resetBtn");
     if (resetBtn) {
       resetBtn.addEventListener("click", () => {
+        // Block any further saves, stop timers, and unbind handlers
+        suppressSaves = true;
+        document.removeEventListener("visibilitychange", onVis);
+        clearInterval(autosaveId);
+        clearInterval(tickId);
+
+        // Remove save, then reload
         localStorage.removeItem(SAVE_KEY);
         location.reload();
       });
