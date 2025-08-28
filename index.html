@@ -75,6 +75,7 @@
         <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
           <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
           <div>New contracts will appear here!</div>
+          <div id="contractArea"></div>
         </div>
       </div>
     </div>
@@ -107,6 +108,12 @@
       flags: {
         contractsUnlocked: false,
       },
+      contractActive: false,
+      contractProgress: 0,
+      contractGoal: 100,
+      contractReward: 500,
+      contractDescription: "A familiar face enters the office",
+      contractDetails: "You meet an old friend who needs help with a bounty. Complete the contract to earn a hefty reward.",
     };
 
     const $ = id => document.getElementById(id);
@@ -154,12 +161,27 @@
       }
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
+      const contractArea = document.getElementById("contractArea");
       if (contractsBox) {
         // Check flag first
         if (state.flags.contractsUnlocked || localStorage.getItem("contractsUnlocked") === "true") {
           contractsBox.style.display = "";
           state.flags.contractsUnlocked = true;
           localStorage.setItem("contractsUnlocked", "true");
+          // Contract UI
+          if (contractArea) {
+            if (!state.contractActive) {
+              contractArea.innerHTML = `<div style='display: flex; align-items: center; margin-top: 12px;'>
+                <button id='takeContractBtn' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
+                <span style='margin-left: 16px;'>${state.contractDescription}</span>
+              </div>`;
+            } else {
+              contractArea.innerHTML = `<div style='margin-top: 12px;'>
+                <div style='margin-bottom: 8px;'>${state.contractDetails}</div>
+                <div>Progress: <strong id='contractProgressNum'>${state.contractProgress}</strong> / ${state.contractGoal}</div>
+              </div>`;
+            }
+          }
         } else {
           // Reveal if any crew type has >= 10
           if (crewTypes.some(c => c.count >= 10)) {
@@ -196,22 +218,52 @@
     const tickId = setInterval(() => {
       state.ticks += 1;
 
-      // Calculate passive income from all crew
-      let passivePerTick = 0;
-      for (const crew of crewTypes) {
-        passivePerTick += crew.count * crew.perTick;
-      }
-      state.unbanked += passivePerTick;
+      // If contract is active, increment contract progress instead of credits
+      if (state.contractActive) {
+        let contractPerTick = 0;
+        for (const crew of crewTypes) {
+          contractPerTick += crew.count * crew.perTick;
+        }
+        state.contractProgress += contractPerTick;
+        // Clamp progress
+        if (state.contractProgress >= state.contractGoal) {
+          state.contractProgress = state.contractGoal;
+          // Award credits and end contract
+          state.credits += state.contractReward;
+          state.contractActive = false;
+          state.contractProgress = 0;
+        }
+      } else {
+        // Calculate passive income from all crew
+        let passivePerTick = 0;
+        for (const crew of crewTypes) {
+          passivePerTick += crew.count * crew.perTick;
+        }
+        state.unbanked += passivePerTick;
 
-      // Bank only whole credits
-      const whole = Math.floor(state.unbanked);
-      if (whole > 0) {
-        state.credits += whole;
-        state.unbanked -= whole;
+        // Bank only whole credits
+        const whole = Math.floor(state.unbanked);
+        if (whole > 0) {
+          state.credits += whole;
+          state.unbanked -= whole;
+        }
       }
 
       updateUI();
+      // Update contract progress UI if active
+      if (state.contractActive) {
+        const progressNum = document.getElementById('contractProgressNum');
+        if (progressNum) progressNum.textContent = state.contractProgress;
+      }
     }, TICK_MS);
+    // Take Contract button event (delegated)
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'takeContractBtn') {
+        state.contractActive = true;
+        state.contractProgress = 0;
+        updateUI();
+      }
+    });
 
     // Persistence
     let suppressSaves = false;
