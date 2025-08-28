@@ -31,8 +31,8 @@
       /* Disabled buttons */
       button[disabled] { opacity: 0.65; cursor: not-allowed; }
       button[disabled]:hover { background: #1b1b25; }
-      /* Hunt button cooldown overlay (width driven by --cdw) */
-      #huntBtn::after {
+      /* Cooldown overlay (width driven by --cdw) */
+      .cooldownable::after {
         content: "";
         position: absolute; left: 0; top: 0; bottom: 0; width: var(--cdw, 0%);
         background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.12) 100%);
@@ -56,7 +56,7 @@
         <h1 style="font-size: 26px; margin: 0 0 18px 0;">Crew</h1>
         <div id="hireRow" style="margin-bottom: 16px; display:none; width: 100%;">
         <div style="display: flex; align-items: center;">
-          <button id="hireBtn" style="margin-left: 0;">Hire Novice Hunter</button>
+          <button id="hireBtn" class="cooldownable" style="margin-left: 0;">Hire Novice Hunter</button>
           <span id="hireCostSpan" style="margin-left: 12px;">Cost: 20</span>
         </div>
         <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
@@ -81,9 +81,9 @@
             <strong class="num" id="credits">0</strong>
           </div>
           <div class="row">
-            <button id="huntBtn">Hunt petty bounty</button>
-            <span id="clickInfo">+1 credit</span>
-            <button id="contractClickBtn" style="display:none; margin-left: 8px;">Advance contract</button>
+          <button id="huntBtn" class="cooldownable">Hunt petty bounty</button>
+          <span id="clickInfo">+1 credit</span>
+          <button id="contractClickBtn" class="cooldownable" style="display:none; margin-left: 8px;">Advance contract</button>
           </div>
           <div class="row" style="display:none">
             <span>Ticks:</span>
@@ -238,10 +238,6 @@
       if (contractClickBtn) {
         contractClickBtn.style.display = state.contractActive ? "" : "none";
       }
-      const huntBtnEl = document.getElementById("huntBtn");
-      if (huntBtnEl) {
-        huntBtnEl.disabled = !canHuntClick();
-      }
 
       // Upgrades UI
       const upgradesArea = document.getElementById("upgradesArea");
@@ -299,7 +295,7 @@
             const contract = contracts[state.currentContract];
             if (!state.contractActive) {
               contractArea.innerHTML = `<div style='display: flex; align-items: center; margin-top: 12px;'>
-                <button id='takeContractBtn' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
+                <button id='takeContractBtn' class='cooldownable' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
                 <span style='margin-left: 16px;'>${contract.description}</span>
               </div>`;
             } else {
@@ -326,11 +322,13 @@
     const hireBtn = document.getElementById("hireBtn");
     if (hireBtn) {
       hireBtn.addEventListener("click", () => {
+        if (!canHuntClick()) return;
         const novice = crewTypes[0];
         const cost = getCrewCost(novice);
         if (state.credits < cost) return;
         state.credits -= cost;
         novice.count += 1;
+        startHuntCooldown();
         updateUI();
       });
     }
@@ -339,6 +337,7 @@
     const contractClickBtn = document.getElementById("contractClickBtn");
     if (contractClickBtn) {
       contractClickBtn.addEventListener("click", () => {
+        if (!canHuntClick()) return;
         if (!state.contractActive) return;
         const add = getClickValue();
         const contract = contracts[state.currentContract];
@@ -353,6 +352,7 @@
         // Update progress number live if visible
         const progressNum = document.getElementById('contractProgressNum');
         if (progressNum) progressNum.textContent = state.contractProgress;
+        startHuntCooldown();
         updateUI();
       });
     }
@@ -444,6 +444,7 @@
     // Take Contract button event (delegated)
     document.addEventListener('click', function(e) {
       if (e.target && e.target.id === 'takeContractBtn') {
+        if (!canHuntClick()) return;
         state.contractActive = true;
         state.contractProgress = 0;
         // Permanently remove hint after first contract is taken
@@ -451,6 +452,7 @@
         const hintEl = document.getElementById('contractsHint');
         if (hintEl) { try { hintEl.remove(); } catch {} }
         try { save(); } catch {}
+        startHuntCooldown();
         updateUI();
       }
     });
@@ -525,20 +527,23 @@
 
     // Smoothly update hunt cooldown visual and disabled state
     function updateCooldownVisual() {
-      const btn = document.getElementById("huntBtn");
-      if (!btn) return;
       const now = Date.now();
       const readyAt = state.huntReadyAt || 0;
+      const total = state.huntCooldownMs || 1000;
+      const btns = document.querySelectorAll('button.cooldownable');
       if (now >= readyAt) {
-        btn.style.setProperty('--cdw', '0%');
-        btn.disabled = false;
+        for (const b of btns) {
+          b.style.setProperty('--cdw', '0%');
+          b.disabled = false;
+        }
         return;
       }
-      const total = state.huntCooldownMs || 1000;
       const elapsed = Math.max(0, total - (readyAt - now));
       const pct = Math.max(0, Math.min(1, elapsed / total));
-      btn.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
-      btn.disabled = true;
+      for (const b of btns) {
+        b.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
+        b.disabled = true;
+      }
       requestAnimationFrame(updateCooldownVisual);
     }
 
