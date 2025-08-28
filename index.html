@@ -33,33 +33,40 @@
     <!-- Main wrapper for page content -->
   <!-- Reset Save Button in top right -->
   <button id="resetBtn" style="position: absolute; top: 18px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer;">Reset Save</button>
-  <div class="wrap">
+  <div style="display: flex; flex-direction: row;">
+    <!-- Crew Sidebar -->
+    <div id="crewArea" style="min-width: 160px; margin-right: 24px; display: flex; flex-direction: column; align-items: flex-start;">
+      <h1 style="font-size: 26px; margin: 18px 0 18px 24px;">Crew</h1>
+      <div id="hireRow" style="margin-bottom: 16px; display:none; margin-left: 24px;">
+        <button id="hireBtn" style="margin-left: 0;">Hire Novice Hunter</button>
+        <span id="hireCostSpan">Cost 20. Adds +0.5 per tick</span>
+      </div>
+    </div>
+    <!-- Main wrapper for page content -->
+    <div class="wrap" style="flex: 1;">
       <!-- Page title -->
       <h1>Bounty Office</h1>
       <!-- Card displays credits and action button -->
       <div class="card">
-          <div class="row">
-            <span>Credits:</span>
-            <strong class="num" id="credits">0</strong>
-          </div>
-          <div class="row">
-            <button id="huntBtn">Hunt petty bounty</button>
-            <span>+1 credit</span>
-          </div>
-          <div class="row" id="hireRow" style="display:none">
-            <button id="hireBtn">Hire Novice Hunter</button>
-            <span id="hireCostSpan">Cost 20. Adds +0.1 per tick</span>
-          </div>
-          <div class="row" style="display:none">
-            <span>Ticks:</span>
-            <strong class="num" id="ticks">0</strong>
-          </div>
-          <div class="row" style="display:none">
-            <span>Unbanked:</span>
-            <strong class="num" id="unbanked">0.0</strong>
-          </div>
+        <div class="row">
+          <span>Credits:</span>
+          <strong class="num" id="credits">0</strong>
         </div>
+        <div class="row">
+          <button id="huntBtn">Hunt petty bounty</button>
+          <span>+1 credit</span>
+        </div>
+        <div class="row" style="display:none">
+          <span>Ticks:</span>
+          <strong class="num" id="ticks">0</strong>
+        </div>
+        <div class="row" style="display:none">
+          <span>Unbanked:</span>
+          <strong class="num" id="unbanked">0.0</strong>
+        </div>
+      </div>
     </div>
+  </div>
 
     <!-- JavaScript for interactive functionality -->
     <script>
@@ -93,8 +100,20 @@
 
       // Update hire cost and count display
       const hireCostSpan = document.getElementById("hireCostSpan");
+      const hireBtn = document.getElementById("hireBtn");
+      const tooltipText = `Cost ${getNoviceCost()}\nAdds +0.5 per tick`;
       if (hireCostSpan) {
-  hireCostSpan.textContent = `Cost ${getNoviceCost()}. Adds +0.5 per tick. Hired: ${state.noviceCount}`;
+        if (state.noviceCount === 0) {
+          // Show info before first purchase
+          hireCostSpan.textContent = `Cost ${getNoviceCost()}. Adds +0.5 per tick. Hired: ${state.noviceCount}`;
+          hireCostSpan.title = "";
+          if (hireBtn) hireBtn.title = "";
+        } else {
+          // After first purchase, move info to tooltip
+          hireCostSpan.textContent = `Hired: ${state.noviceCount}`;
+          hireCostSpan.title = tooltipText;
+          if (hireBtn) hireBtn.title = tooltipText;
+        }
       }
 
       const hireRow = document.getElementById("hireRow");
