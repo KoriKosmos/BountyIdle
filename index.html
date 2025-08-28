@@ -49,51 +49,55 @@
   <div id="lastSaved" style="position: absolute; top: 126px; right: 24px; color: #aaa; font-size: 13px;">Last saved just now</div>
   <div id="autosavePopup" style="position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: #232333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 1000;">Game autosaved!</div>
   <div id="gameToast" style="position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%); background: #2b2b3a; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 1000;"></div>
-  <div style="display: flex; flex-direction: row;">
-    <!-- Crew Sidebar -->
-    <div id="crewArea" class="card" style="min-width: 200px; margin: 18px 0 18px 24px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
-      <h1 style="font-size: 26px; margin: 0 0 18px 0;">Crew</h1>
-      <div id="hireRow" style="margin-bottom: 16px; display:none; width: 100%;">
-        <div style="display: flex; align-items: center;">
-          <button id="hireBtn" style="margin-left: 0;">Hire Novice Hunter</button>
-          <span id="hireCostSpan" style="margin-left: 12px;">Hired: 0</span>
+  <div style="position: relative; width: 100vw; min-height: 100vh;">
+  <!-- Left Sidebar: Crew + Upgrades side-by-side -->
+  <div style="position: absolute; left: 0; top: 0; display: flex; flex-direction: row; gap: 12px; margin: 18px 0 18px 24px; flex-shrink: 0; z-index: 2;">
+      <div id="crewArea" class="card" style="width: 200px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
+        <h1 style="font-size: 26px; margin: 0 0 18px 0;">Crew</h1>
+        <div id="hireRow" style="margin-bottom: 16px; display:none; width: 100%;">
+          <div style="display: flex; align-items: center;">
+            <button id="hireBtn" style="margin-left: 0;">Hire Novice Hunter</button>
+            <span id="hireCostSpan" style="margin-left: 12px;">Hired: 0</span>
+          </div>
+          <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
+          <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Cost: 20</div>
         </div>
-        <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
-        <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Cost: 20</div>
+      </div>
+      <div id="upgradesArea" class="card" style="width: 220px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
+        <h1 style="font-size: 26px; margin: 0 0 18px 0;">Upgrades</h1>
+        <div id="upgradeArea" style="width: 100%;"></div>
       </div>
     </div>
-    <!-- Upgrades Sidebar -->
-    <div id="upgradesArea" class="card" style="min-width: 220px; margin: 18px 0; margin-left: 12px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
-      <h1 style="font-size: 26px; margin: 0 0 18px 0;">Upgrades</h1>
-      <div id="upgradeArea" style="width: 100%;"></div>
-    </div>
+    <div style="flex: 1 1 auto;"></div>
     <!-- Main wrapper for page content -->
-    <div class="wrap" style="flex: 1;">
-      <!-- Page title -->
-      <h1>Bounty Office</h1>
-      <!-- Card displays credits and action button -->
-      <div class="card">
-        <div class="row">
-          <span>Credits:</span>
-          <strong class="num" id="credits">0</strong>
-        </div>
-        <div class="row">
-          <button id="huntBtn">Hunt petty bounty</button>
-          <span id="clickInfo">+1 credit</span>
-          <button id="contractClickBtn" style="display:none; margin-left: 8px;">Advance contract</button>
-        </div>
-        <div class="row" style="display:none">
-          <span>Ticks:</span>
-          <strong class="num" id="ticks">0</strong>
-        </div>
-        <div class="row" style="display:none">
-          <span>Unbanked:</span>
-          <strong class="num" id="unbanked">0.0</strong>
-        </div>
-        <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
-          <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
-          <div id="contractsHint">New contracts will appear here!</div>
-          <div id="contractArea"></div>
+    <div style="display: flex; justify-content: center; align-items: flex-start; width: 100vw; min-height: 100vh;">
+      <div class="wrap" style="max-width: 560px; margin: 18px 0;">
+        <!-- Page title -->
+        <h1>Bounty Office</h1>
+        <!-- Card displays credits and action button -->
+        <div class="card">
+          <div class="row">
+            <span>Credits:</span>
+            <strong class="num" id="credits">0</strong>
+          </div>
+          <div class="row">
+            <button id="huntBtn">Hunt petty bounty</button>
+            <span id="clickInfo">+1 credit</span>
+            <button id="contractClickBtn" style="display:none; margin-left: 8px;">Advance contract</button>
+          </div>
+          <div class="row" style="display:none">
+            <span>Ticks:</span>
+            <strong class="num" id="ticks">0</strong>
+          </div>
+          <div class="row" style="display:none">
+            <span>Unbanked:</span>
+            <strong class="num" id="unbanked">0.0</strong>
+          </div>
+          <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
+            <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
+            <div id="contractsHint">New contracts will appear here!</div>
+            <div id="contractArea"></div>
+          </div>
         </div>
       </div>
     </div>
