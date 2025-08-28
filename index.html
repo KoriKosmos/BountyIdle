@@ -77,23 +77,34 @@
     // Save key for localStorage
     const SAVE_KEY = "bountySaveV1";
 
+    // Crew types data structure
+    const crewTypes = [
+      {
+        id: "novice",
+        name: "Novice Hunter",
+        baseCost: 20,
+        scaling: 1.15,
+        perTick: 0.5,
+        count: 0,
+        revealed: false,
+      },
+      // Future crew types can be added here
+    ];
+
     // Game state
     const state = {
       credits: 0,
       ticks: 0,
       unbanked: 0,
-      passivePerTick: 0,
-      noviceCount: 0, // Number of Novice Hunters hired
-      hireRevealed: false, // Tracks if hire button has ever been revealed
     };
 
     const $ = id => document.getElementById(id);
     const fmt0 = n => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
     const fmt1 = n => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-    // Calculate the cost for the next Novice Hunter (scaling: base 20, x1.15^count)
-    function getNoviceCost() {
-      return Math.floor(20 * Math.pow(1.15, state.noviceCount));
+    // Calculate the cost for a crew type
+    function getCrewCost(crew) {
+      return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
     }
 
     function updateUI() {
@@ -102,38 +113,30 @@
       const u = document.getElementById("unbanked");
       if (u) u.textContent = fmt1(state.unbanked);
 
-      // Update hire cost and count display
+      // Novice Hunter UI
+      const novice = crewTypes[0];
       const hireCostSpan = document.getElementById("hireCostSpan");
       const hireCostBelow = document.getElementById("hireCostBelow");
       if (hireCostSpan) {
-        if (state.noviceCount === 0) {
-          hireCostSpan.textContent = `Hired: 0`;
-        } else {
-          const totalPerTick = (state.noviceCount * 0.5).toFixed(1);
-          hireCostSpan.textContent = `Hired: ${state.noviceCount}`;
-        }
+        hireCostSpan.textContent = `Hired: ${novice.count}`;
       }
       if (hireCostBelow) {
-        const cost = getNoviceCost();
-        hireCostBelow.textContent = `Cost ${cost}`;
+        hireCostBelow.textContent = `Cost ${getCrewCost(novice)}`;
       }
-      // Update per-tick earnings below the button
       const hirePerTick = document.getElementById("hirePerTick");
       if (hirePerTick) {
-        if (state.noviceCount === 0) {
-          hirePerTick.textContent = `+0.5 credits/tick`;
+        if (novice.count === 0) {
+          hirePerTick.textContent = `+${novice.perTick} credits/tick`;
         } else {
-          const totalPerTick = (state.noviceCount * 0.5).toFixed(1);
+          const totalPerTick = (novice.count * novice.perTick).toFixed(1);
           hirePerTick.textContent = `+${totalPerTick} credits/tick`;
         }
       }
-
       const hireRow = document.getElementById("hireRow");
       if (hireRow) {
-        // Track if the hire button has ever been revealed
-        if (state.hireRevealed || state.credits >= getNoviceCost()) {
+        if (novice.revealed || state.credits >= getCrewCost(novice)) {
           hireRow.style.display = "";
-          state.hireRevealed = true;
+          novice.revealed = true;
         } else {
           hireRow.style.display = "none";
         }
@@ -149,11 +152,11 @@
     const hireBtn = document.getElementById("hireBtn");
     if (hireBtn) {
       hireBtn.addEventListener("click", () => {
-        const cost = getNoviceCost();
-        if (state.credits < cost) return; // Not enough credits
+        const novice = crewTypes[0];
+        const cost = getCrewCost(novice);
+        if (state.credits < cost) return;
         state.credits -= cost;
-  state.passivePerTick += 0.5; // Each purchase adds passive income
-        state.noviceCount = (state.noviceCount || 0) + 1;
+        novice.count += 1;
         updateUI();
       });
     }
@@ -163,8 +166,12 @@
     const tickId = setInterval(() => {
       state.ticks += 1;
 
-      // Grow unbanked by passive income
-      state.unbanked += state.passivePerTick;
+      // Calculate passive income from all crew
+      let passivePerTick = 0;
+      for (const crew of crewTypes) {
+        passivePerTick += crew.count * crew.perTick;
+      }
+      state.unbanked += passivePerTick;
 
       // Bank only whole credits
       const whole = Math.floor(state.unbanked);
@@ -181,7 +188,8 @@
 
     function save() {
       if (suppressSaves) return;
-      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      // Save both state and crewTypes
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ state, crewTypes }));
     }
 
     function load() {
@@ -189,7 +197,12 @@
       if (!raw) return;
       try {
         const data = JSON.parse(raw);
-        Object.assign(state, data);
+        Object.assign(state, data.state || {});
+        if (Array.isArray(data.crewTypes)) {
+          for (let i = 0; i < crewTypes.length; ++i) {
+            Object.assign(crewTypes[i], data.crewTypes[i]);
+          }
+        }
       } catch {}
     }
 
