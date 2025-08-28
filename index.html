@@ -32,8 +32,10 @@
   <body>
     <!-- Main wrapper for page content -->
   <!-- Reset Save Button in top right -->
-  <button id="resetBtn" style="position: absolute; top: 18px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer;">Reset Save</button>
-  <div id="lastSaved" style="position: absolute; top: 54px; right: 24px; color: #aaa; font-size: 13px;">Last saved just now</div>
+  <button id="manualSaveBtn" style="position: absolute; top: 18px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer;">Manual Save</button>
+  <button id="autosaveToggleBtn" style="position: absolute; top: 54px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #232333; color: #fff; cursor: pointer;">Autosave ON</button>
+  <button id="resetBtn" style="position: absolute; top: 90px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #b00020; background: #ff2d2d; color: #fff; cursor: pointer; font-weight: bold;">Reset Save</button>
+  <div id="lastSaved" style="position: absolute; top: 126px; right: 24px; color: #aaa; font-size: 13px;">Last saved just now</div>
   <div id="autosavePopup" style="position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: #232333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 1000;">Game autosaved!</div>
   <div style="display: flex; flex-direction: row;">
     <!-- Crew Sidebar -->
@@ -229,13 +231,30 @@
       setTimeout(() => { popup.style.opacity = "0"; }, 3000);
     }
 
+    let autosaveEnabled = true;
+    let autosaveId = setInterval(autosave, 30_000);
     function autosave() {
+      if (!autosaveEnabled) return;
       save();
       lastSaveTime = Date.now();
       updateLastSaved();
       showAutosavePopup();
     }
-    const autosaveId = setInterval(autosave, 30_000);
+
+    // Autosave toggle button functionality
+    const autosaveToggleBtn = document.getElementById("autosaveToggleBtn");
+    if (autosaveToggleBtn) {
+      autosaveToggleBtn.addEventListener("click", () => {
+        autosaveEnabled = !autosaveEnabled;
+        autosaveToggleBtn.textContent = autosaveEnabled ? "Autosave ON" : "Autosave OFF";
+        if (autosaveEnabled && !autosaveId) {
+          autosaveId = setInterval(autosave, 30_000);
+        } else if (!autosaveEnabled && autosaveId) {
+          clearInterval(autosaveId);
+          autosaveId = null;
+        }
+      });
+    }
 
     // Save when tab is hidden, unless we are resetting
     const onVis = () => {
@@ -243,10 +262,31 @@
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // Reset Save button functionality
+    // Manual Save button functionality
+    const manualSaveBtn = document.getElementById("manualSaveBtn");
+    if (manualSaveBtn) {
+      manualSaveBtn.addEventListener("click", () => {
+        save();
+        lastSaveTime = Date.now();
+        updateLastSaved();
+        showAutosavePopup();
+      });
+    }
+
+    // Reset Save button functionality with 3-press failsafe
     const resetBtn = document.getElementById("resetBtn");
+    let resetPressCount = 0;
     if (resetBtn) {
       resetBtn.addEventListener("click", () => {
+        resetPressCount++;
+        if (resetPressCount < 3) {
+          resetBtn.textContent = `Reset Save (${3 - resetPressCount} more)`;
+          setTimeout(() => {
+            resetPressCount = 0;
+            resetBtn.textContent = "Reset Save";
+          }, 2000);
+          return;
+        }
         // Block any further saves, stop timers, and unbind handlers
         suppressSaves = true;
         document.removeEventListener("visibilitychange", onVis);
