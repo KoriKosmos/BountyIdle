@@ -100,6 +100,18 @@
       // Future crew types can be added here
     ];
 
+    // Contracts data structure
+    const contracts = [
+      {
+        id: "familiar-face",
+        description: "A familiar face enters the office",
+        details: "You meet an old friend who needs help with a bounty. Complete the contract to earn a hefty reward.",
+        goal: 1000,
+        reward: 2000,
+      },
+      // Add more contracts here!
+    ];
+
     // Game state
     const state = {
       credits: 0,
@@ -110,10 +122,7 @@
       },
       contractActive: false,
       contractProgress: 0,
-      contractGoal: 100,
-      contractReward: 500,
-      contractDescription: "A familiar face enters the office",
-      contractDetails: "You meet an old friend who needs help with a bounty. Complete the contract to earn a hefty reward.",
+      currentContract: 0, // index in contracts array
     };
 
     const $ = id => document.getElementById(id);
@@ -170,15 +179,16 @@
           localStorage.setItem("contractsUnlocked", "true");
           // Contract UI
           if (contractArea) {
+            const contract = contracts[state.currentContract];
             if (!state.contractActive) {
               contractArea.innerHTML = `<div style='display: flex; align-items: center; margin-top: 12px;'>
                 <button id='takeContractBtn' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
-                <span style='margin-left: 16px;'>${state.contractDescription}</span>
+                <span style='margin-left: 16px;'>${contract.description}</span>
               </div>`;
             } else {
               contractArea.innerHTML = `<div style='margin-top: 12px;'>
-                <div style='margin-bottom: 8px;'>${state.contractDetails}</div>
-                <div>Progress: <strong id='contractProgressNum'>${state.contractProgress}</strong> / ${state.contractGoal}</div>
+                <div style='margin-bottom: 8px;'>${contract.details}</div>
+                <div>Progress: <strong id='contractProgressNum'>${state.contractProgress}</strong> / ${contract.goal}</div>
               </div>`;
             }
           }
@@ -220,16 +230,17 @@
 
       // If contract is active, increment contract progress instead of credits
       if (state.contractActive) {
+        const contract = contracts[state.currentContract];
         let contractPerTick = 0;
         for (const crew of crewTypes) {
           contractPerTick += crew.count * crew.perTick;
         }
         state.contractProgress += contractPerTick;
         // Clamp progress
-        if (state.contractProgress >= state.contractGoal) {
-          state.contractProgress = state.contractGoal;
+        if (state.contractProgress >= contract.goal) {
+          state.contractProgress = contract.goal;
           // Award credits and end contract
-          state.credits += state.contractReward;
+          state.credits += contract.reward;
           state.contractActive = false;
           state.contractProgress = 0;
         }
