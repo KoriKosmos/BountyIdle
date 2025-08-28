@@ -177,10 +177,10 @@
           contractsBox.style.display = "";
           state.flags.contractsUnlocked = true;
           localStorage.setItem("contractsUnlocked", "true");
-          // Hide contracts hint after first contract taken
+          // Permanently remove contracts hint after first contract is taken
           const contractsHint = document.getElementById("contractsHint");
           if (contractsHint) {
-            contractsHint.style.display = state.contractActive || state.contractProgress > 0 ? "none" : "";
+            contractsHint.style.display = state.contractActive ? "none" : "";
           }
           // Contract UI
           if (contractArea) {
