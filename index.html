@@ -104,6 +104,9 @@
       credits: 0,
       ticks: 0,
       unbanked: 0,
+      flags: {
+        contractsUnlocked: false,
+      },
     };
 
     const $ = id => document.getElementById(id);
@@ -149,14 +152,23 @@
           hireRow.style.display = "none";
         }
       }
-      // Contracts box logic
+      // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
       if (contractsBox) {
-        if (novice.count >= 10 || localStorage.getItem("contractsUnlocked") === "true") {
+        // Check flag first
+        if (state.flags.contractsUnlocked || localStorage.getItem("contractsUnlocked") === "true") {
           contractsBox.style.display = "";
+          state.flags.contractsUnlocked = true;
           localStorage.setItem("contractsUnlocked", "true");
         } else {
-          contractsBox.style.display = "none";
+          // Reveal if any crew type has >= 10
+          if (crewTypes.some(c => c.count >= 10)) {
+            contractsBox.style.display = "";
+            state.flags.contractsUnlocked = true;
+            localStorage.setItem("contractsUnlocked", "true");
+          } else {
+            contractsBox.style.display = "none";
+          }
         }
       }
     }
@@ -208,6 +220,10 @@
       if (suppressSaves) return;
       // Save both state and crewTypes
       localStorage.setItem(SAVE_KEY, JSON.stringify({ state, crewTypes }));
+      // Also persist flags for contracts
+      if (state.flags.contractsUnlocked) {
+        localStorage.setItem("contractsUnlocked", "true");
+      }
     }
 
     function load() {
@@ -220,6 +236,10 @@
           for (let i = 0; i < crewTypes.length; ++i) {
             Object.assign(crewTypes[i], data.crewTypes[i]);
           }
+        }
+        // Load contracts flag from localStorage if present
+        if (localStorage.getItem("contractsUnlocked") === "true") {
+          state.flags.contractsUnlocked = true;
         }
       } catch {}
     }
