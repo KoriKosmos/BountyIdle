@@ -94,7 +94,7 @@
       // Update hire cost and count display
       const hireCostSpan = document.getElementById("hireCostSpan");
       if (hireCostSpan) {
-        hireCostSpan.textContent = `Cost ${getNoviceCost()}. Adds +0.1 per tick. Hired: ${state.noviceCount}`;
+  hireCostSpan.textContent = `Cost ${getNoviceCost()}. Adds +0.5 per tick. Hired: ${state.noviceCount}`;
       }
 
       const hireRow = document.getElementById("hireRow");
@@ -121,7 +121,7 @@
         const cost = getNoviceCost();
         if (state.credits < cost) return; // Not enough credits
         state.credits -= cost;
-        state.passivePerTick += 0.1; // Each purchase adds passive income
+  state.passivePerTick += 0.5; // Each purchase adds passive income
         state.noviceCount = (state.noviceCount || 0) + 1;
         updateUI();
       });
