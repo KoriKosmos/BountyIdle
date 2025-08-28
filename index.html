@@ -59,11 +59,11 @@
           <span id="hireCostSpan" style="margin-left: 12px;">Hired: 0</span>
         </div>
         <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
-        <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Cost 20</div>
+        <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Cost: 20</div>
       </div>
     </div>
     <!-- Upgrades Sidebar -->
-    <div id="upgradesArea" class="card" style="min-width: 220px; margin: 18px 0; margin-left: 12px; display: none; flex-direction: column; align-items: flex-start; padding: 18px;">
+    <div id="upgradesArea" class="card" style="min-width: 220px; margin: 18px 0; margin-left: 12px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
       <h1 style="font-size: 26px; margin: 0 0 18px 0;">Upgrades</h1>
       <div id="upgradeArea" style="width: 100%;"></div>
     </div>
@@ -204,7 +204,7 @@
         hireCostSpan.textContent = `Hired: ${novice.count}`;
       }
       if (hireCostBelow) {
-        hireCostBelow.textContent = `Cost ${getCrewCost(novice)}`;
+        hireCostBelow.textContent = `Cost: ${getCrewCost(novice)}`;
       }
       const hirePerTick = document.getElementById("hirePerTick");
       if (hirePerTick) {
@@ -242,27 +242,28 @@
       // Upgrades UI
       const upgradesArea = document.getElementById("upgradesArea");
       const upgradeArea = document.getElementById("upgradeArea");
-      const baseRevealCost = 10;
-      // Reveal the Upgrades card the first time player reaches 10 credits
-      if (!state.flags.upgradesRevealed && state.credits >= baseRevealCost) {
-        state.flags.upgradesRevealed = true;
-        try { save(); } catch {}
-      }
-      if (upgradesArea) {
-        upgradesArea.style.display = state.flags.upgradesRevealed ? "" : "none";
-      }
-      if (upgradeArea && state.flags.upgradesRevealed) {
+      if (upgradeArea) {
         // Render all upgrades
         let html = "";
         for (const up of upgradeTypes) {
           const cost = getUpgradeCost(up);
           const disabled = state.credits < cost ? "disabled" : "";
+          // Extra info: for reduceCooldown, show net reduction
+          let extra = "";
+          if (up.id === 'reduceCooldown') {
+            const count = (state.upgrades && state.upgrades[up.id]) || 0;
+            const net = Math.round((1 - Math.pow(0.95, count)) * 100);
+            extra = ` <span style='color:#9aa;'>• Net: ${net}%</span>`;
+          }
+          const count = (state.upgrades && state.upgrades[up.id]) || 0;
+          const shouldShow = count > 0 || state.credits >= up.baseCost;
+          if (!shouldShow) continue;
           html += `<div class='upgradeRow' style='margin-bottom: 12px;'>
             <div style='display:flex; align-items:center;'>
               <button data-upgrade-id='${up.id}' ${disabled} style='margin-left:0;'>${up.name}</button>
-              <span style='margin-left:12px;'>Cost ${cost}</span>
+              <span style='margin-left:12px;'>Cost: ${cost}</span>
             </div>
-            <div style='font-size:13px; color:#aaa; margin-top:2px; margin-left:2px;'>${up.description}</div>
+            <div style='font-size:13px; color:#aaa; margin-top:2px; margin-left:2px;'>${up.description}${extra}</div>
           </div>`;
         }
         upgradeArea.innerHTML = html;
