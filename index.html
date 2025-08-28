@@ -249,7 +249,7 @@
     function startCooldown(typeId) {
       if (!state.cooldowns || !state.cooldowns[typeId]) return;
       const cd = state.cooldowns[typeId];
-      const dur = cd.ms || BASE_HUNT_COOLDOWN_MS;
+      const dur = (cd.ms != null) ? cd.ms : BASE_HUNT_COOLDOWN_MS;
       cd.readyAt = Date.now() + dur;
       updateCooldownVisual();
     }
