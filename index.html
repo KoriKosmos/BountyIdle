@@ -56,7 +56,7 @@
         <h1 style="font-size: 26px; margin: 0 0 18px 0;">Crew</h1>
         <div id="hireRow" style="margin-bottom: 16px; display:none; width: 100%;">
         <div style="display: flex; align-items: center;">
-          <button id="hireBtn" class="cooldownable" style="margin-left: 0;">Hire Novice Hunter</button>
+          <button id="hireBtn" class="cooldownable" data-cooldown-type="hire" style="margin-left: 0;">Hire Novice Hunter</button>
           <span id="hireCostSpan" style="margin-left: 12px;">Cost: 20</span>
         </div>
         <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
@@ -81,9 +81,9 @@
             <strong class="num" id="credits">0</strong>
           </div>
           <div class="row">
-          <button id="huntBtn" class="cooldownable action-btn" data-btn-type="action">Hunt petty bounty</button>
+          <button id="huntBtn" class="cooldownable action-btn" data-btn-type="action" data-cooldown-type="action">Hunt petty bounty</button>
           <span id="clickInfo">+1 credit</span>
-          <button id="contractClickBtn" class="cooldownable action-btn" data-btn-type="action" style="display:none; margin-left: 8px;">Advance contract</button>
+          <button id="contractClickBtn" class="cooldownable action-btn" data-btn-type="action" data-cooldown-type="action" style="display:none; margin-left: 8px;">Advance contract</button>
           </div>
           <div class="row" style="display:none">
             <span>Ticks:</span>
@@ -165,8 +165,10 @@
         // Action-type buttons: hunt, advance contract, etc.
         action: { base: 1, multiplier: 1 },
       },
-      huntCooldownMs: BASE_HUNT_COOLDOWN_MS,
-      huntReadyAt: 0,
+      cooldowns: {
+        action: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+        hire: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+      },
       upgrades: {}, // map of upgradeId -> count
       flags: {
         contractsUnlocked: false,
@@ -206,15 +208,19 @@
     // Recalculate cooldown from upgrades using flat -5% per purchase from base
     function updateCooldownFromUpgrades() {
       const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
-      const oldCd = state.huntCooldownMs || BASE_HUNT_COOLDOWN_MS;
       const linearFactor = Math.max(0, 1 - 0.05 * count);
-      const newCd = Math.max(100, Math.round(BASE_HUNT_COOLDOWN_MS * linearFactor));
-      state.huntCooldownMs = newCd;
-      const now = Date.now();
-      if (state.huntReadyAt && state.huntReadyAt > now) {
-        const remaining = state.huntReadyAt - now;
-        const scaled = Math.round(remaining * (newCd / oldCd));
-        state.huntReadyAt = now + Math.max(0, scaled);
+      // Update only the 'action' type cooldown; others remain base
+      const action = state.cooldowns && state.cooldowns.action;
+      if (action) {
+        const oldCd = action.ms || BASE_HUNT_COOLDOWN_MS;
+        const newCd = Math.max(100, Math.round((action.baseMs || BASE_HUNT_COOLDOWN_MS) * linearFactor));
+        action.ms = newCd;
+        const now = Date.now();
+        if (action.readyAt && action.readyAt > now) {
+          const remaining = action.readyAt - now;
+          const scaled = Math.round(remaining * (newCd / oldCd));
+          action.readyAt = now + Math.max(0, scaled);
+        }
       }
     }
 
@@ -227,14 +233,21 @@
       state.buttonTypes.action.multiplier = Math.pow(2, count || 0);
     }
 
-    function canHuntClick() {
-      return Date.now() >= (state.huntReadyAt || 0);
+    function canClick(typeId) {
+      const cd = (state.cooldowns && state.cooldowns[typeId]) || { readyAt: 0 };
+      return Date.now() >= (cd.readyAt || 0);
     }
 
-    function startHuntCooldown() {
-      state.huntReadyAt = Date.now() + (state.huntCooldownMs || 1000);
+    function startCooldown(typeId) {
+      if (!state.cooldowns || !state.cooldowns[typeId]) return;
+      const cd = state.cooldowns[typeId];
+      const dur = cd.ms || BASE_HUNT_COOLDOWN_MS;
+      cd.readyAt = Date.now() + dur;
       updateCooldownVisual();
     }
+    // Back-compat wrappers
+    function canHuntClick() { return canClick('action'); }
+    function startHuntCooldown() { return startCooldown('action'); }
 
     function updateUI() {
       $("credits").textContent = fmt0(state.credits);
@@ -337,7 +350,7 @@
             const contract = contracts[state.currentContract];
             if (!state.contractActive) {
               contractArea.innerHTML = `<div style='display: flex; align-items: center; margin-top: 12px;'>
-                <button id='takeContractBtn' class='cooldownable' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
+                <button id='takeContractBtn' class='cooldownable' data-cooldown-type='action' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
                 <span style='margin-left: 16px;'>${contract.description}</span>
               </div>`;
             } else {
@@ -355,22 +368,22 @@
 
     // Actions
     $("huntBtn").addEventListener("click", () => {
-      if (!canHuntClick()) return;
+      if (!canClick('action')) return;
       state.credits += getClickValue();
-      startHuntCooldown();
+      startCooldown('action');
       updateUI();
     });
 
     const hireBtn = document.getElementById("hireBtn");
     if (hireBtn) {
       hireBtn.addEventListener("click", () => {
-        if (!canHuntClick()) return;
+        if (!canClick('hire')) return;
         const novice = crewTypes[0];
         const cost = getCrewCost(novice);
         if (state.credits < cost) return;
         state.credits -= cost;
         novice.count += 1;
-        startHuntCooldown();
+        startCooldown('hire');
         updateUI();
       });
     }
@@ -379,7 +392,7 @@
     const contractClickBtn = document.getElementById("contractClickBtn");
     if (contractClickBtn) {
       contractClickBtn.addEventListener("click", () => {
-        if (!canHuntClick()) return;
+        if (!canClick('action')) return;
         if (!state.contractActive) return;
         const add = getClickValue();
         const contract = contracts[state.currentContract];
@@ -394,7 +407,7 @@
         // Update progress number live if visible
         const progressNum = document.getElementById('contractProgressNum');
         if (progressNum) progressNum.textContent = state.contractProgress;
-        startHuntCooldown();
+        startCooldown('action');
         updateUI();
       });
     }
@@ -481,7 +494,7 @@
     // Take Contract button event (delegated)
     document.addEventListener('click', function(e) {
       if (e.target && e.target.id === 'takeContractBtn') {
-        if (!canHuntClick()) return;
+        if (!canClick('action')) return;
         state.contractActive = true;
         state.contractProgress = 0;
         // Permanently remove hint after first contract is taken
@@ -489,7 +502,7 @@
         const hintEl = document.getElementById('contractsHint');
         if (hintEl) { try { hintEl.remove(); } catch {} }
         try { save(); } catch {}
-        startHuntCooldown();
+        startCooldown('action');
         updateUI();
       }
     });
@@ -522,6 +535,22 @@
         } else if (!state.buttonTypes.action) {
           state.buttonTypes.action = { base: 1, multiplier: 1 };
         }
+        // Ensure cooldowns structure exists and migrate legacy fields
+        if (!state.cooldowns || typeof state.cooldowns !== 'object') {
+          state.cooldowns = {
+            action: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+            hire: { baseMs: BASE_HUNT_COOLDOWN_MS, ms: BASE_HUNT_COOLDOWN_MS, readyAt: 0 },
+          };
+        }
+        if (typeof state.huntCooldownMs === 'number') {
+          // legacy field; map to action.ms (will be recalculated anyway)
+          state.cooldowns.action.ms = state.huntCooldownMs;
+          delete state.huntCooldownMs;
+        }
+        if (typeof state.huntReadyAt === 'number') {
+          state.cooldowns.action.readyAt = state.huntReadyAt;
+          delete state.huntReadyAt;
+        }
         // Migrations from earlier structures
         if (state.upgrades && state.upgrades.reduceCooldownPurchased && state.upgrades.reduceCooldown == null) {
           state.upgrades.reduceCooldown = 1;
@@ -552,6 +581,8 @@
     load();
     updateUI();
     // Ensure cooldown reflects saved/initial state
+    updateCooldownFromUpgrades();
+    updateClickPowerFromUpgrades();
     updateCooldownVisual();
     function updateLastSaved() {
       const el = document.getElementById("lastSaved");
@@ -580,23 +611,26 @@
     // Smoothly update hunt cooldown visual and disabled state
     function updateCooldownVisual() {
       const now = Date.now();
-      const readyAt = state.huntReadyAt || 0;
-      const total = state.huntCooldownMs || BASE_HUNT_COOLDOWN_MS;
       const btns = document.querySelectorAll('button.cooldownable');
-      if (now >= readyAt) {
-        for (const b of btns) {
+      let anyCooling = false;
+      for (const b of btns) {
+        const type = b.getAttribute('data-cooldown-type') || 'action';
+        const cd = state.cooldowns && state.cooldowns[type];
+        if (!cd) continue;
+        const total = cd.ms || BASE_HUNT_COOLDOWN_MS;
+        const readyAt = cd.readyAt || 0;
+        if (now >= readyAt) {
           b.style.setProperty('--cdw', '0%');
           b.disabled = false;
+        } else {
+          const elapsed = Math.max(0, total - (readyAt - now));
+          const pct = Math.max(0, Math.min(1, elapsed / total));
+          b.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
+          b.disabled = true;
+          anyCooling = true;
         }
-        return;
       }
-      const elapsed = Math.max(0, total - (readyAt - now));
-      const pct = Math.max(0, Math.min(1, elapsed / total));
-      for (const b of btns) {
-        b.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
-        b.disabled = true;
-      }
-      requestAnimationFrame(updateCooldownVisual);
+      if (anyCooling) requestAnimationFrame(updateCooldownVisual);
     }
 
     let autosaveEnabled = true;
