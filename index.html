@@ -1076,12 +1076,44 @@
       return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
     }
 
-    // Calculate the click interval for Snitches (first snitch clicks once per tick, subsequent snitches halve the time)
-    function getSnitchClickInterval(snitch) {
-      if (snitch.count === 0) return snitch.baseClickInterval;
-      // First snitch clicks once per tick (interval = 1), each additional snitch halves the interval
-      if (snitch.count === 1) return 1;
+    // Calculate the autoclick interval in ticks for Snitches.
+    // The first Snitch clicks once per tick, and each additional Snitch
+    // halves the time between clicks instead of adding extra clicks.
+    function getSnitchIntervalTicks(snitch) {
+      if (snitch.count <= 0) return snitch.baseClickInterval;
       return 1 / Math.pow(2, snitch.count - 1);
+    }
+
+    // Convert the interval to milliseconds based on the global tick length
+    function getSnitchIntervalMs(snitch) {
+      if (snitch.count <= 0) return null;
+      return getSnitchIntervalTicks(snitch) * TICK_MS;
+    }
+
+    // Manage the Snitch autoclick timer
+    let snitchTimer = null;
+
+    function updateSnitchAutoclicker() {
+      const snitch = crewTypes[1];
+      if (snitchTimer) {
+        clearInterval(snitchTimer);
+        snitchTimer = null;
+      }
+      const intervalMs = getSnitchIntervalMs(snitch);
+      if (!intervalMs) return;
+      snitchTimer = setInterval(() => {
+        if (snitch.autoclickType === "action" && canClick('action')) {
+          startCooldown('action');
+          if (state.contractActive) {
+            const contract = contracts[state.currentContract];
+            state.contractProgress += getClickValue();
+            checkAndCompleteContract(contract);
+          } else {
+            state.credits += getClickValue();
+          }
+          updateUI();
+        }
+      }, intervalMs);
     }
 
     // Button type click value
@@ -1224,7 +1256,7 @@
       }
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
-        const interval = getSnitchClickInterval(snitch);
+        const interval = getSnitchIntervalTicks(snitch);
         const tickText = getTickText(interval);
         snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
@@ -1380,7 +1412,8 @@
         state.credits -= cost;
         snitch.count += 1;
         startCooldown('hire');
-        const interval = getSnitchClickInterval(snitch);
+        updateSnitchAutoclicker();
+        const interval = getSnitchIntervalTicks(snitch);
         const tickText = getTickText(interval);
         showToast(`Hired ${snitch.name}! Autoclicks every ${interval.toFixed(1)} ${tickText}`);
         updateUI();
@@ -1453,41 +1486,7 @@
     const tickId = setInterval(() => {
       state.ticks += 1;
 
-      // Handle Snitch autoclicking
-      const snitch = crewTypes[1];
-      if (snitch.count > 0) {
-        // Initialize snitch click tracking if not exists
-        if (!state.snitchClickTracking) {
-          state.snitchClickTracking = { lastClick: 0 };
-        }
-        
-        // Calculate collective click interval (halving time with each snitch)
-        const clickInterval = getSnitchClickInterval(snitch);
-        // Use fractional tracking to properly handle fractional intervals
-        state.snitchClickTracking.lastClick += 1;
-        
-        if (state.snitchClickTracking.lastClick >= clickInterval) {
-          // Time to autoclick!
-          // Keep the remainder to maintain precise timing
-          state.snitchClickTracking.lastClick = state.snitchClickTracking.lastClick - clickInterval;
-          
-          // Perform the autoclick action (respecting cooldowns)
-          if (snitch.autoclickType === "action" && canClick('action')) {
-            startCooldown('action');
-            
-            // During contracts, Snitch contributes to contract progress instead of credits
-            // This maintains consistency with other game mechanics
-            if (state.contractActive) {
-              const contract = contracts[state.currentContract];
-              state.contractProgress += getClickValue();
-              checkAndCompleteContract(contract);
-            } else {
-              // Only add credits when not in a contract
-              state.credits += getClickValue();
-            }
-          }
-        }
-      }
+      // Snitch autoclicking handled by independent timer
 
       // If contract is active, increment contract progress instead of credits
       if (state.contractActive) {
@@ -1606,10 +1605,6 @@
         updateCooldownFromUpgrades();
         // Ensure click power multiplier reflects upgrades
         updateClickPowerFromUpgrades();
-        // Ensure snitch click tracking exists
-        if (!state.snitchClickTracking) {
-          state.snitchClickTracking = { lastClick: 0 };
-        }
       } catch {}
     }
 
@@ -1619,6 +1614,7 @@
     // Load once, then autosave every 30s
     load();
     updateUI();
+    updateSnitchAutoclicker();
     // Ensure cooldown reflects saved/initial state
     updateCooldownFromUpgrades();
     updateClickPowerFromUpgrades();
@@ -2064,6 +2060,7 @@
       
       applyUpgradeEffect('reduceCooldown');
       applyUpgradeEffect('doubleClick');
+      updateSnitchAutoclicker();
       updateUI();
       showToast('Everything maxed out!');
     }
