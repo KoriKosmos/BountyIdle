@@ -1076,12 +1076,100 @@
       return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
     }
 
-    // Calculate the click interval for Snitches (first snitch clicks once per tick, subsequent snitches halve the time)
-    function getSnitchClickInterval(snitch) {
-      if (snitch.count === 0) return snitch.baseClickInterval;
-      // First snitch clicks once per tick (interval = 1), each additional snitch halves the interval
-      if (snitch.count === 1) return 1;
+    // Calculate the autoclick interval in ticks for Snitches.
+    // The first Snitch clicks once per tick, and each additional Snitch
+    // halves the time between clicks instead of adding extra clicks.
+    function getSnitchIntervalTicks(snitch) {
+      if (snitch.count <= 0) return snitch.baseClickInterval;
       return 1 / Math.pow(2, snitch.count - 1);
+    }
+
+    // Convert the interval to milliseconds based on the global tick length
+    function getSnitchIntervalMs(snitch) {
+      if (snitch.count <= 0) return null;
+      return getSnitchIntervalTicks(snitch) * TICK_MS;
+    }
+
+    // Manage the Snitch autoclick timer
+    let snitchTimer = null;
+    
+    // Throttled UI update system for snitch autoclicks
+    // This prevents performance issues when multiple snitches fire rapidly (every 125ms)
+    // Critical UI elements (credits, contract progress) update immediately for responsiveness
+    // Full UI updates are throttled to maintain smooth performance
+    let pendingUIUpdate = false;
+    let uiUpdateThrottleMs = 100; // Minimum 100ms between UI updates
+    
+    // Dynamically adjust throttle rate based on snitch count
+    function updateUIThrottleRate() {
+      const snitch = crewTypes[1];
+      if (snitch.count > 50) {
+        uiUpdateThrottleMs = 250; // Slower updates for very high snitch counts
+      } else if (snitch.count > 20) {
+        uiUpdateThrottleMs = 150; // Medium throttle for moderate snitch counts
+      } else {
+        uiUpdateThrottleMs = 100; // Fast updates for low snitch counts
+      }
+    }
+    
+    function scheduleUIUpdate() {
+      if (!pendingUIUpdate) {
+        pendingUIUpdate = true;
+        setTimeout(() => {
+          updateUI();
+          pendingUIUpdate = false;
+        }, uiUpdateThrottleMs);
+      }
+    }
+    
+    // Update only critical UI elements immediately (credits, contract progress)
+    function updateCriticalUI() {
+      $("credits").textContent = fmt0(state.credits);
+      
+      // Update contract progress if active
+      if (state.contractActive) {
+        const contractProgressNum = document.getElementById('contractProgressNum');
+        if (contractProgressNum) {
+          contractProgressNum.textContent = state.contractProgress;
+        }
+      }
+    }
+    
+    // Force immediate UI update (used when dev menu changes crew counts)
+    function forceUIUpdate() {
+      if (pendingUIUpdate) {
+        clearTimeout(pendingUIUpdate);
+        pendingUIUpdate = false;
+      }
+      updateUI();
+    }
+
+    function updateSnitchAutoclicker() {
+      const snitch = crewTypes[1];
+      if (snitchTimer) {
+        clearInterval(snitchTimer);
+        snitchTimer = null;
+      }
+      // Update throttle rate based on current snitch count
+      updateUIThrottleRate();
+      const intervalMs = getSnitchIntervalMs(snitch);
+      if (!intervalMs) return;
+      snitchTimer = setInterval(() => {
+        if (snitch.autoclickType === "action" && canClick('action')) {
+          startCooldown('action');
+          if (state.contractActive) {
+            const contract = contracts[state.currentContract];
+            state.contractProgress += getClickValue();
+            checkAndCompleteContract(contract);
+          } else {
+            state.credits += getClickValue();
+          }
+          // Update critical UI immediately for responsive feel
+          updateCriticalUI();
+          // Schedule full UI update with throttling
+          scheduleUIUpdate();
+        }
+      }, intervalMs);
     }
 
     // Button type click value
@@ -1224,7 +1312,7 @@
       }
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
-        const interval = getSnitchClickInterval(snitch);
+        const interval = getSnitchIntervalTicks(snitch);
         const tickText = getTickText(interval);
         snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
@@ -1380,7 +1468,8 @@
         state.credits -= cost;
         snitch.count += 1;
         startCooldown('hire');
-        const interval = getSnitchClickInterval(snitch);
+        updateSnitchAutoclicker();
+        const interval = getSnitchIntervalTicks(snitch);
         const tickText = getTickText(interval);
         showToast(`Hired ${snitch.name}! Autoclicks every ${interval.toFixed(1)} ${tickText}`);
         updateUI();
@@ -1453,41 +1542,7 @@
     const tickId = setInterval(() => {
       state.ticks += 1;
 
-      // Handle Snitch autoclicking
-      const snitch = crewTypes[1];
-      if (snitch.count > 0) {
-        // Initialize snitch click tracking if not exists
-        if (!state.snitchClickTracking) {
-          state.snitchClickTracking = { lastClick: 0 };
-        }
-        
-        // Calculate collective click interval (halving time with each snitch)
-        const clickInterval = getSnitchClickInterval(snitch);
-        // Use fractional tracking to properly handle fractional intervals
-        state.snitchClickTracking.lastClick += 1;
-        
-        if (state.snitchClickTracking.lastClick >= clickInterval) {
-          // Time to autoclick!
-          // Keep the remainder to maintain precise timing
-          state.snitchClickTracking.lastClick = state.snitchClickTracking.lastClick - clickInterval;
-          
-          // Perform the autoclick action (respecting cooldowns)
-          if (snitch.autoclickType === "action" && canClick('action')) {
-            startCooldown('action');
-            
-            // During contracts, Snitch contributes to contract progress instead of credits
-            // This maintains consistency with other game mechanics
-            if (state.contractActive) {
-              const contract = contracts[state.currentContract];
-              state.contractProgress += getClickValue();
-              checkAndCompleteContract(contract);
-            } else {
-              // Only add credits when not in a contract
-              state.credits += getClickValue();
-            }
-          }
-        }
-      }
+      // Snitch autoclicking handled by independent timer
 
       // If contract is active, increment contract progress instead of credits
       if (state.contractActive) {
@@ -1606,10 +1661,6 @@
         updateCooldownFromUpgrades();
         // Ensure click power multiplier reflects upgrades
         updateClickPowerFromUpgrades();
-        // Ensure snitch click tracking exists
-        if (!state.snitchClickTracking) {
-          state.snitchClickTracking = { lastClick: 0 };
-        }
       } catch {}
     }
 
@@ -1619,6 +1670,7 @@
     // Load once, then autosave every 30s
     load();
     updateUI();
+    updateSnitchAutoclicker();
     // Ensure cooldown reflects saved/initial state
     updateCooldownFromUpgrades();
     updateClickPowerFromUpgrades();
@@ -1974,7 +2026,12 @@
         if (crew) {
           crew.count = count;
           document.getElementById('devCrewCount').value = '';
-          updateUI();
+          // Force immediate UI update for dev menu changes
+          forceUIUpdate();
+          // Update snitch autoclicker timer if snitch count changed
+          if (crewType === 'snitch') {
+            updateSnitchAutoclicker();
+          }
           showToast(`${crew.name} count set to ${count}`);
         }
       }
@@ -1985,7 +2042,12 @@
       const crew = crewTypes.find(c => c.id === crewType);
       if (crew) {
         crew.count += amount;
-        updateUI();
+        // Force immediate UI update for dev menu changes
+        forceUIUpdate();
+        // Update snitch autoclicker timer if snitch count changed
+        if (crewType === 'snitch') {
+          updateSnitchAutoclicker();
+        }
         showToast(`Added ${amount} ${crew.name}`);
       }
     }
@@ -2064,7 +2126,10 @@
       
       applyUpgradeEffect('reduceCooldown');
       applyUpgradeEffect('doubleClick');
-      updateUI();
+      // Update snitch autoclicker timer after maxing out crew
+      updateSnitchAutoclicker();
+      // Force immediate UI update for dev menu changes
+      forceUIUpdate();
       showToast('Everything maxed out!');
     }
 
@@ -2104,13 +2169,16 @@
                 Object.assign(state, saveData.state);
                 if (Array.isArray(saveData.crewTypes)) {
                   for (let i = 0; i < crewTypes.length; ++i) {
-                    Object.assign(crewTypes[i], saveData.crewTypes[i]);
-                  }
-                }
-                updateUI();
-                applyUpgradeEffect('reduceCooldown');
-                applyUpgradeEffect('doubleClick');
-                showToast('Save imported successfully!');
+                                                Object.assign(crewTypes[i], saveData.crewTypes[i]);
+          }
+        }
+        // Force immediate UI update after importing save data
+        forceUIUpdate();
+        applyUpgradeEffect('reduceCooldown');
+        applyUpgradeEffect('doubleClick');
+        // Update snitch autoclicker timer after importing save data
+        updateSnitchAutoclicker();
+        showToast('Save imported successfully!');
               } else {
                 showToast('Invalid save file');
               }
