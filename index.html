@@ -700,6 +700,17 @@
               <div id="hirePerTick" class="text-accent">+0.5 credits/tick</div>
               <div id="hireCostBelow" class="text-secondary">Hired: 0</div>
             </div>
+            
+            <div id="snitchHireRow" style="display:none;">
+              <div class="row">
+                <button id="snitchHireBtn" class="btn cooldownable" data-cooldown-type="hire">Hire Snitch (autoclicker)</button>
+              </div>
+              <div class="row">
+                <span id="snitchHireCostSpan" class="text-secondary">Cost: 100</span>
+              </div>
+              <div id="snitchPerTick" class="text-accent">Autoclicks every 1.0 tick</div>
+              <div id="snitchHireCostBelow" class="text-secondary">Hired: 0</div>
+            </div>
           </div>
         </aside>
 
@@ -780,6 +791,17 @@
         count: 0,
         revealed: false,
       },
+      {
+        id: "snitch",
+        name: "Snitch (autoclicker)",
+        baseCost: 1000,
+        scaling: 10,
+        perTick: 0,
+        count: 0,
+        revealed: false,
+        autoclickType: "action", // Type of button to autoclick
+        baseClickInterval: 1, // Base interval in ticks (1 tick = 1 second)
+      },
       // Future crew types can be added here
     ];
 
@@ -848,6 +870,12 @@
     // Calculate the cost for a crew type
     function getCrewCost(crew) {
       return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
+    }
+
+    // Calculate the click interval for Snitches (halving time with each new snitch)
+    function getSnitchClickInterval(snitch) {
+      if (snitch.count === 0) return snitch.baseClickInterval;
+      return snitch.baseClickInterval / Math.pow(2, snitch.count);
     }
 
     // Button type click value
@@ -957,6 +985,43 @@
         const ready = !cd || (cd.ms === 0) || Date.now() >= (cd.readyAt || 0);
         const canAfford = state.credits >= getCrewCost(novice);
         hireButton.disabled = !(ready && canAfford);
+      }
+
+      // Snitch UI
+      const snitch = crewTypes[1];
+      const snitchHireCostSpan = document.getElementById("snitchHireCostSpan");
+      const snitchHireCostBelow = document.getElementById("snitchHireCostBelow");
+      if (snitchHireCostSpan) {
+        snitchHireCostSpan.textContent = `Cost: ${getCrewCost(snitch)}`;
+      }
+      if (snitchHireCostBelow) {
+        snitchHireCostBelow.textContent = `Hired: ${snitch.count}`;
+      }
+      const snitchPerTick = document.getElementById("snitchPerTick");
+      if (snitchPerTick) {
+        if (snitch.count === 0) {
+          snitchPerTick.innerHTML = `<span style='color:#9aa;'>Autoclicks every ${snitch.baseClickInterval.toFixed(1)} tick</span>`;
+        } else {
+          const interval = getSnitchClickInterval(snitch);
+          snitchPerTick.innerHTML = `<span style='color:#9aa;'>Autoclicks every ${interval.toFixed(1)} tick(s)</span>`;
+        }
+      }
+      const snitchHireRow = document.getElementById("snitchHireRow");
+      if (snitchHireRow) {
+        if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
+          snitchHireRow.style.display = "";
+          snitch.revealed = true;
+        } else {
+          snitchHireRow.style.display = "none";
+        }
+      }
+      // Grey out Snitch Hire button when unaffordable or on cooldown
+      const snitchHireButton = document.getElementById('snitchHireBtn');
+      if (snitchHireButton) {
+        const cd = state.cooldowns && state.cooldowns.hire;
+        const ready = !cd || (cd.ms === 0) || Date.now() >= (cd.readyAt || 0);
+        const canAfford = state.credits >= getCrewCost(snitch);
+        snitchHireButton.disabled = !(ready && canAfford);
       }
       // Update click info text and toggle contract click button
       const clickInfo = document.getElementById("clickInfo");
@@ -1073,6 +1138,22 @@
         state.credits -= cost;
         novice.count += 1;
         startCooldown('hire');
+        showToast(`Hired ${novice.name}! +${novice.perTick} credits/tick`);
+        updateUI();
+      });
+    }
+
+    const snitchHireBtn = document.getElementById("snitchHireBtn");
+    if (snitchHireBtn) {
+      snitchHireBtn.addEventListener("click", () => {
+        if (!canClick('hire')) return;
+        const snitch = crewTypes[1];
+        const cost = getCrewCost(snitch);
+        if (state.credits < cost) return;
+        state.credits -= cost;
+        snitch.count += 1;
+        startCooldown('hire');
+        showToast(`Hired ${snitch.name}! Autoclicks every ${getSnitchClickInterval(snitch).toFixed(1)} tick(s)`);
         updateUI();
       });
     }
@@ -1092,6 +1173,7 @@
           state.credits += contract.reward;
           state.contractActive = false;
           state.contractProgress = 0;
+          showToast(`Contract completed! +${contract.reward} credits`);
         }
         // Update progress number live if visible
         const progressNum = document.getElementById('contractProgressNum');
@@ -1149,6 +1231,44 @@
     const tickId = setInterval(() => {
       state.ticks += 1;
 
+      // Handle Snitch autoclicking
+      const snitch = crewTypes[1];
+      if (snitch.count > 0) {
+        // Initialize snitch click tracking if not exists
+        if (!state.snitchClickTracking) {
+          state.snitchClickTracking = { lastClick: 0 };
+        }
+        
+        // Calculate collective click interval (halving time with each snitch)
+        const clickInterval = getSnitchClickInterval(snitch);
+        state.snitchClickTracking.lastClick += 1;
+        
+        if (state.snitchClickTracking.lastClick >= clickInterval) {
+          // Time to autoclick!
+          state.snitchClickTracking.lastClick = 0;
+          
+          // Perform the autoclick action (respecting cooldowns)
+          if (snitch.autoclickType === "action" && canClick('action')) {
+            // Add credits from autoclick
+            state.credits += getClickValue();
+            startCooldown('action');
+            
+            // If contract is active, also contribute to contract progress
+            if (state.contractActive) {
+              const contract = contracts[state.currentContract];
+              state.contractProgress += getClickValue();
+              if (state.contractProgress >= contract.goal) {
+                state.contractProgress = contract.goal;
+                state.credits += contract.reward;
+                state.contractActive = false;
+                state.contractProgress = 0;
+                showToast(`Contract completed! +${contract.reward} credits`);
+              }
+            }
+          }
+        }
+      }
+
       // If contract is active, increment contract progress instead of credits
       if (state.contractActive) {
         const contract = contracts[state.currentContract];
@@ -1164,6 +1284,7 @@
           state.credits += contract.reward;
           state.contractActive = false;
           state.contractProgress = 0;
+          showToast(`Contract completed! +${contract.reward} credits`);
         }
       } else {
         // Calculate passive income from all crew
@@ -1200,6 +1321,8 @@
         if (hintEl) { try { hintEl.remove(); } catch {} }
         try { save(); } catch {}
         startCooldown('action');
+        const contract = contracts[state.currentContract];
+        showToast(`Contract taken: ${contract.description}`);
         updateUI();
       }
     });
@@ -1272,6 +1395,10 @@
         updateCooldownFromUpgrades();
         // Ensure click power multiplier reflects upgrades
         updateClickPowerFromUpgrades();
+        // Ensure snitch click tracking exists
+        if (!state.snitchClickTracking) {
+          state.snitchClickTracking = { lastClick: 0 };
+        }
       } catch {}
     }
 
