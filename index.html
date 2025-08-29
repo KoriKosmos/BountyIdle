@@ -808,6 +808,7 @@
         id: "doubleClick",
         name: "Double Click Power",
         baseCost: 20,
+        revealAt: 10,
         scaling: 2.5,
         description: "Multiplies click power by 2",
       },
@@ -981,7 +982,8 @@
             isMaxed = count >= REDUCE_CD_MAX_COUNT;
           }
           const count = (state.upgrades && state.upgrades[up.id]) || 0;
-          const shouldShow = count > 0 || state.credits >= up.baseCost;
+          const revealThreshold = up.revealAt !== undefined ? up.revealAt : up.baseCost;
+          const shouldShow = count > 0 || state.credits >= revealThreshold;
           if (!shouldShow) continue;
           const maxedClass = isMaxed ? "maxed" : "";
           const mobileClass = window.innerWidth <= 768 ? "upgrade-row-mobile" : "";
