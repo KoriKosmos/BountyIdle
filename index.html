@@ -138,6 +138,36 @@
         background: var(--button-disabled);
       }
 
+      /* Utility classes for display states */
+      .hidden {
+        display: none !important;
+      }
+
+      .visible {
+        display: block !important;
+      }
+
+      .inline-visible {
+        display: inline !important;
+      }
+
+      .flex-visible {
+        display: flex !important;
+      }
+
+      /* Margin utility classes */
+      .margin-top-sm {
+        margin-top: var(--spacing-sm) !important;
+      }
+
+      .margin-top-md {
+        margin-top: var(--spacing-md) !important;
+      }
+
+      .margin-bottom-sm {
+        margin-bottom: var(--spacing-sm) !important;
+      }
+
       .last-saved {
         color: var(--text-secondary);
         font-size: var(--font-size-sm);
@@ -690,7 +720,7 @@
             <div class="card-header">
               <h2 class="card-title">Crew</h2>
             </div>
-            <div id="hireRow" style="display:none;">
+            <div id="hireRow" class="hidden">
               <div class="row">
                 <button id="hireBtn" class="btn cooldownable" data-cooldown-type="hire">Hire Novice Hunter</button>
               </div>
@@ -701,7 +731,7 @@
               <div id="hireCostBelow" class="text-secondary">Hired: 0</div>
             </div>
             
-            <div id="snitchHireRow" style="display:none;">
+            <div id="snitchHireRow" class="hidden">
               <div class="row">
                 <button id="snitchHireBtn" class="btn cooldownable" data-cooldown-type="hire">Hire Snitch (autoclicker)</button>
               </div>
@@ -729,19 +759,19 @@
               <span id="clickInfo" class="text-secondary">+1 credit</span>
             </div>
             <div class="row">
-              <button id="contractClickBtn" class="btn cooldownable action-btn" data-btn-type="action" data-cooldown-type="action" style="display:none;">Advance contract</button>
+              <button id="contractClickBtn" class="btn cooldownable action-btn hidden" data-btn-type="action" data-cooldown-type="action">Advance contract</button>
             </div>
-            <div class="row" style="display:none">
-              <span>Ticks:</span>
-              <strong class="num" id="ticks">0</strong>
-            </div>
-            <div class="row" style="display:none">
-              <span>Unbanked:</span>
-              <strong class="num" id="unbanked">0.0</strong>
-            </div>
+                          <div class="row hidden">
+                <span>Ticks:</span>
+                <strong class="num" id="ticks">0</strong>
+              </div>
+              <div class="row hidden">
+                <span>Unbanked:</span>
+                <strong class="num" id="unbanked">0.0</strong>
+              </div>
             
             <!-- Contracts section -->
-            <div id="contractsBox" class="contracts-section" style="display:none;">
+                          <div id="contractsBox" class="contracts-section hidden">
               <h3 class="contracts-title">Contracts</h3>
               <div id="contractsHint" class="contracts-hint">
                 New contracts will appear here!<br>
@@ -953,6 +983,15 @@
       showToast(`Contract completed! +${contract.reward} credits`);
     }
 
+    // Reusable function to check and complete contracts if goal is reached
+    function checkAndCompleteContract(contract) {
+      if (state.contractProgress >= contract.goal) {
+        completeContract(contract);
+        return true;
+      }
+      return false;
+    }
+
     function updateUI() {
       $("credits").textContent = fmt0(state.credits);
       $("ticks").textContent = fmt0(state.ticks);
@@ -979,14 +1018,16 @@
         }
       }
       const hireRow = document.getElementById("hireRow");
-      if (hireRow) {
-        if (novice.revealed || state.credits >= getCrewCost(novice)) {
-          hireRow.style.display = "";
-          novice.revealed = true;
-        } else {
-          hireRow.style.display = "none";
+              if (hireRow) {
+          if (novice.revealed || state.credits >= getCrewCost(novice)) {
+            hireRow.classList.remove("hidden");
+            hireRow.classList.add("visible");
+            novice.revealed = true;
+          } else {
+            hireRow.classList.add("hidden");
+            hireRow.classList.remove("visible");
+          }
         }
-      }
       // Grey out Hire button when unaffordable or on cooldown
       const hireButton = document.getElementById('hireBtn');
       if (hireButton) {
@@ -1008,22 +1049,21 @@
       }
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
-        if (snitch.count === 0) {
-          snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${snitch.baseClickInterval.toFixed(1)} tick</span>`;
-        } else {
-          const interval = getSnitchClickInterval(snitch);
-          snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} tick(s)</span>`;
-        }
+        const interval = getSnitchClickInterval(snitch);
+        const tickText = interval === 1 ? "tick" : "ticks";
+        snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
       const snitchHireRow = document.getElementById("snitchHireRow");
-      if (snitchHireRow) {
-        if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
-          snitchHireRow.style.display = "";
-          snitch.revealed = true;
-        } else {
-          snitchHireRow.style.display = "none";
+              if (snitchHireRow) {
+          if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
+            snitchHireRow.classList.remove("hidden");
+            snitchHireRow.classList.add("visible");
+            snitch.revealed = true;
+          } else {
+            snitchHireRow.classList.add("hidden");
+            snitchHireRow.classList.remove("visible");
+          }
         }
-      }
       // Grey out Snitch Hire button when unaffordable or on cooldown
       const snitchHireButton = document.getElementById('snitchHireBtn');
       if (snitchHireButton) {
@@ -1040,7 +1080,13 @@
       }
       const contractClickBtn = document.getElementById("contractClickBtn");
       if (contractClickBtn) {
-        contractClickBtn.style.display = state.contractActive ? "" : "none";
+        if (state.contractActive) {
+          contractClickBtn.classList.remove("hidden");
+          contractClickBtn.classList.add("visible");
+        } else {
+          contractClickBtn.classList.add("hidden");
+          contractClickBtn.classList.remove("visible");
+        }
       }
 
       // Upgrades UI
@@ -1100,7 +1146,8 @@
         }
 
         if (state.flags.contractsUnlocked) {
-          contractsBox.style.display = "";
+          contractsBox.classList.remove("hidden");
+          contractsBox.classList.add("visible");
           // Hide hint permanently once first contract is taken
           const contractsHint = document.getElementById("contractsHint");
           if (contractsHint) {
@@ -1112,19 +1159,20 @@
           if (contractArea) {
             const contract = contracts[state.currentContract];
             if (!state.contractActive) {
-              contractArea.innerHTML = `<div class="row" style="margin-top: 12px;">
+              contractArea.innerHTML = `<div class="row margin-top-sm">
                 <button id='takeContractBtn' class='btn cooldownable' data-cooldown-type='action'>Take Contract</button>
                 <span class="text-secondary">${contract.description}</span>
               </div>`;
             } else {
-              contractArea.innerHTML = `<div style='margin-top: 12px;'>
-                <div style='margin-bottom: 8px;'>${contract.details}</div>
+              contractArea.innerHTML = `<div class="margin-top-sm">
+                <div class="margin-bottom-sm">${contract.details}</div>
                 <div>Progress: <strong id='contractProgressNum'>${state.contractProgress}</strong> / ${contract.goal}</div>
               </div>`;
             }
           }
         } else {
-          contractsBox.style.display = "none";
+          contractsBox.classList.add("hidden");
+          contractsBox.classList.remove("visible");
         }
       }
     }
@@ -1176,10 +1224,7 @@
         const add = getClickValue();
         const contract = contracts[state.currentContract];
         state.contractProgress += add;
-        if (state.contractProgress >= contract.goal) {
-          // Complete contract immediately on click
-          completeContract(contract);
-        }
+        checkAndCompleteContract(contract);
         // Update progress number live if visible
         const progressNum = document.getElementById('contractProgressNum');
         if (progressNum) progressNum.textContent = state.contractProgress;
@@ -1263,9 +1308,7 @@
             if (state.contractActive) {
               const contract = contracts[state.currentContract];
               state.contractProgress += getClickValue();
-              if (state.contractProgress >= contract.goal) {
-                completeContract(contract);
-              }
+              checkAndCompleteContract(contract);
             } else {
               // Only add credits when not in a contract
               state.credits += getClickValue();
@@ -1283,10 +1326,7 @@
         }
         state.contractProgress += contractPerTick;
         // Clamp progress
-        if (state.contractProgress >= contract.goal) {
-          // Award credits and end contract
-          completeContract(contract);
-        }
+        checkAndCompleteContract(contract);
       } else {
         // Calculate passive income from all crew
         let passivePerTick = 0;
