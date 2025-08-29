@@ -708,7 +708,7 @@
               <div class="row">
                 <span id="snitchHireCostSpan" class="text-secondary"></span>
               </div>
-              <div id="snitchPerTick" class="text-accent">Autoclicks every 1.0 tick</div>
+              <div id="snitchPerTick" class="text-accent"></div>
               <div id="snitchHireCostBelow" class="text-secondary">Hired: 0</div>
             </div>
           </div>
@@ -875,7 +875,7 @@
     // Calculate the click interval for Snitches (halving time with each new snitch)
     function getSnitchClickInterval(snitch) {
       if (snitch.count === 0) return snitch.baseClickInterval;
-      return snitch.baseClickInterval / Math.pow(2, snitch.count);
+      return snitch.baseClickInterval / Math.pow(2, snitch.count - 1);
     }
 
     // Button type click value
@@ -944,6 +944,15 @@
     function canHuntClick() { return canClick('action'); }
     function startHuntCooldown() { return startCooldown('action'); }
 
+    // Reusable function to complete contracts and award rewards
+    function completeContract(contract) {
+      state.contractProgress = contract.goal;
+      state.credits += contract.reward;
+      state.contractActive = false;
+      state.contractProgress = 0;
+      showToast(`Contract completed! +${contract.reward} credits`);
+    }
+
     function updateUI() {
       $("credits").textContent = fmt0(state.credits);
       $("ticks").textContent = fmt0(state.ticks);
@@ -963,10 +972,10 @@
       const hirePerTick = document.getElementById("hirePerTick");
       if (hirePerTick) {
         if (novice.count === 0) {
-          hirePerTick.innerHTML = `<span style='color:#9aa;'>+${novice.perTick}</span> credits/tick`;
+          hirePerTick.innerHTML = `<span class="text-accent">+${novice.perTick}</span> credits/tick`;
         } else {
           const totalPerTick = (novice.count * novice.perTick).toFixed(1);
-          hirePerTick.innerHTML = `<span style='color:#9aa;'>+${totalPerTick}</span> credits/tick`;
+          hirePerTick.innerHTML = `<span class="text-accent">+${totalPerTick}</span> credits/tick`;
         }
       }
       const hireRow = document.getElementById("hireRow");
@@ -1000,10 +1009,10 @@
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
         if (snitch.count === 0) {
-          snitchPerTick.innerHTML = `<span style='color:#9aa;'>Autoclicks every ${snitch.baseClickInterval.toFixed(1)} tick</span>`;
+          snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${snitch.baseClickInterval.toFixed(1)} tick</span>`;
         } else {
           const interval = getSnitchClickInterval(snitch);
-          snitchPerTick.innerHTML = `<span style='color:#9aa;'>Autoclicks every ${interval.toFixed(1)} tick(s)</span>`;
+          snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} tick(s)</span>`;
         }
       }
       const snitchHireRow = document.getElementById("snitchHireRow");
@@ -1168,12 +1177,8 @@
         const contract = contracts[state.currentContract];
         state.contractProgress += add;
         if (state.contractProgress >= contract.goal) {
-          state.contractProgress = contract.goal;
           // Complete contract immediately on click
-          state.credits += contract.reward;
-          state.contractActive = false;
-          state.contractProgress = 0;
-          showToast(`Contract completed! +${contract.reward} credits`);
+          completeContract(contract);
         }
         // Update progress number live if visible
         const progressNum = document.getElementById('contractProgressNum');
@@ -1259,11 +1264,7 @@
               const contract = contracts[state.currentContract];
               state.contractProgress += getClickValue();
               if (state.contractProgress >= contract.goal) {
-                state.contractProgress = contract.goal;
-                state.credits += contract.reward;
-                state.contractActive = false;
-                state.contractProgress = 0;
-                showToast(`Contract completed! +${contract.reward} credits`);
+                completeContract(contract);
               }
             } else {
               // Only add credits when not in a contract
@@ -1283,12 +1284,8 @@
         state.contractProgress += contractPerTick;
         // Clamp progress
         if (state.contractProgress >= contract.goal) {
-          state.contractProgress = contract.goal;
           // Award credits and end contract
-          state.credits += contract.reward;
-          state.contractActive = false;
-          state.contractProgress = 0;
-          showToast(`Contract completed! +${contract.reward} credits`);
+          completeContract(contract);
         }
       } else {
         // Calculate passive income from all crew
