@@ -415,7 +415,7 @@
 
       .toast.fade-out {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(-10px);
       }
 
       /* Toast container for stacking */
@@ -1105,7 +1105,7 @@
       applyUpgradeEffect(up.id);
       try { save(); } catch {}
       updateUI();
-      showToast(`Upgrade purchased: ${up.name}`);
+      try { showToast(`Upgrade purchased: ${up.name}`); } catch {}
     });
 
     function applyUpgradeEffect(id) {
@@ -1273,10 +1273,68 @@
 
     // Toast management system
     let toastCounter = 0;
-    const toastContainer = document.getElementById("toastContainer");
+    let toastContainer = null;
     const MAX_TOASTS = 5; // Maximum number of toasts to show at once
+    
+    // Toast timing constants (matching CSS transition duration)
+    const TOAST_FADE_DURATION = 500; // 0.5s in milliseconds
+    const TOAST_DISPLAY_DURATION = 3000; // 3 seconds
+    const TOAST_REMOVE_DELAY = TOAST_FADE_DURATION; // Match CSS transition duration
+    
+    // Queue for early toast calls before container is ready
+    let earlyToastQueue = [];
+
+    // Initialize toast container when DOM is ready
+    function initToastContainer() {
+      if (!toastContainer) {
+        toastContainer = document.getElementById("toastContainer");
+        if (toastContainer) {
+          // Process any queued toasts
+          while (earlyToastQueue.length > 0) {
+            const queuedToast = earlyToastQueue.shift();
+            createToast(queuedToast.message, queuedToast.type);
+          }
+        }
+      }
+      return toastContainer;
+    }
+
+    // Initialize toast system when DOM is ready
+    function initToastSystem() {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initToastContainer);
+      } else {
+        // DOM already loaded, initialize immediately
+        initToastContainer();
+      }
+    }
+
+    // Start initialization
+    initToastSystem();
+    
+    // Also try to initialize on next tick as a fallback
+    setTimeout(initToastContainer, 0);
+    
+    // Additional fallback: try every 100ms for the first second
+    let fallbackAttempts = 0;
+    const fallbackInterval = setInterval(() => {
+      if (toastContainer || fallbackAttempts >= 10) {
+        clearInterval(fallbackInterval);
+        return;
+      }
+      fallbackAttempts++;
+      initToastContainer();
+    }, 100);
 
     function createToast(message, type = "info") {
+      // Ensure toast container is available
+      const container = initToastContainer();
+      if (!container) {
+        // Queue the toast for later when container is ready
+        earlyToastQueue.push({ message, type });
+        return null;
+      }
+
       const toast = document.createElement("div");
       toast.className = "toast";
       toast.textContent = message;
@@ -1290,10 +1348,10 @@
       }
       
       // Add to container
-      toastContainer.appendChild(toast);
+      container.appendChild(toast);
       
       // Remove oldest toast if we exceed the maximum
-      const toasts = toastContainer.querySelectorAll('.toast');
+      const toasts = container.querySelectorAll('.toast');
       if (toasts.length > MAX_TOASTS) {
         const oldestToast = toasts[0];
         oldestToast.classList.add("fade-out");
@@ -1301,7 +1359,7 @@
           if (oldestToast.parentNode) {
             oldestToast.parentNode.removeChild(oldestToast);
           }
-        }, 300);
+        }, TOAST_REMOVE_DELAY);
       }
       
       // Show toast
@@ -1309,38 +1367,47 @@
         toast.classList.add("show");
       });
       
-      // Auto-remove after 3 seconds
+      // Auto-remove after display duration
       setTimeout(() => {
         toast.classList.add("fade-out");
         setTimeout(() => {
           if (toast.parentNode) {
             toast.parentNode.removeChild(toast);
           }
-        }, 500);
-      }, 3000);
+        }, TOAST_REMOVE_DELAY);
+      }, TOAST_DISPLAY_DURATION);
       
-      // Also remove if user navigates away
+      // Also remove if user navigates away (observe only toast container for performance)
       const observer = new MutationObserver(() => {
         if (!toast.parentNode) {
           observer.disconnect();
         }
       });
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(container, { childList: true, subtree: false });
       
       return toast;
     }
 
     function showAutosaveToast() {
-      createToast("Game autosaved!", "autosave");
+      const result = createToast("Game autosaved!", "autosave");
+      if (!result) {
+        console.warn("Could not show autosave toast - container not ready");
+      }
     }
 
     function showManualSaveToast() {
-      createToast("Game manually saved!", "manual-save");
+      const result = createToast("Game manually saved!", "manual-save");
+      if (!result) {
+        console.warn("Could not show manual save toast - container not ready");
+      }
     }
 
     // Generic toast helper
     function showToast(message) {
-      createToast(message, "info");
+      const result = createToast(message, "info");
+      if (!result) {
+        console.warn("Could not show toast - container not ready");
+      }
     }
 
     // Smoothly update hunt cooldown visual and disabled state
@@ -1375,7 +1442,7 @@
       save();
       lastSaveTime = Date.now();
       updateLastSaved();
-      showAutosaveToast();
+      try { showAutosaveToast(); } catch {}
     }
 
     // Autosave toggle button functionality
@@ -1406,7 +1473,7 @@
         save();
         lastSaveTime = Date.now();
         updateLastSaved();
-        showManualSaveToast();
+        try { showManualSaveToast(); } catch {}
       });
     }
 
