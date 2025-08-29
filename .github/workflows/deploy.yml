@@ -1,7 +1,7 @@
-on: [push, pull_request]
+on: [push, pull_request, page_build]
 
 jobs:
-  deploy:
+  deploy2nekoweb:
     runs-on: ubuntu-latest
     name: Deploy to NekoWeb
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
