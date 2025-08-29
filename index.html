@@ -950,6 +950,14 @@
           hireRow.style.display = "none";
         }
       }
+      // Grey out Hire button when unaffordable or on cooldown
+      const hireButton = document.getElementById('hireBtn');
+      if (hireButton) {
+        const cd = state.cooldowns && state.cooldowns.hire;
+        const ready = !cd || (cd.ms === 0) || Date.now() >= (cd.readyAt || 0);
+        const canAfford = state.credits >= getCrewCost(novice);
+        hireButton.disabled = !(ready && canAfford);
+      }
       // Update click info text and toggle contract click button
       const clickInfo = document.getElementById("clickInfo");
       if (clickInfo) {
@@ -1396,6 +1404,12 @@
           b.style.setProperty('--cdw', (pct * 100).toFixed(1) + '%');
           b.disabled = true;
           anyCooling = true;
+        }
+        // Additional affordability rule for hire button
+        if (b.id === 'hireBtn') {
+          const novice = crewTypes[0];
+          const canAfford = state.credits >= getCrewCost(novice);
+          if (!canAfford) b.disabled = true;
         }
       }
       if (anyCooling) requestAnimationFrame(updateCooldownVisual);
