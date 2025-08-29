@@ -1036,9 +1036,14 @@
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
         const interval = getSnitchClickInterval(snitch);
-        const tickText = Math.abs(interval - SINGLE_TICK_THRESHOLD) < TICK_INTERVAL_TOLERANCE ? "tick" : "ticks";
+        const tickText = getTickText(interval);
         snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
+
+// Helper function to determine singular/plural tick text
+function getTickText(interval) {
+  return Math.abs(interval - SINGLE_TICK_THRESHOLD) < TICK_INTERVAL_TOLERANCE ? "tick" : "ticks";
+}
       const snitchHireRow = document.getElementById("snitchHireRow");
       if (snitchHireRow) {
         if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
