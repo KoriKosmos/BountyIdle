@@ -745,14 +745,7 @@
             <div class="row">
               <button id="contractClickBtn" class="btn cooldownable action-btn hidden" data-btn-type="action" data-cooldown-type="action">Advance contract</button>
             </div>
-            <div class="row hidden">
-              <span>Ticks:</span>
-              <strong class="num" id="ticks">0</strong>
-            </div>
-            <div class="row hidden">
-              <span>Unbanked:</span>
-              <strong class="num" id="unbanked">0.0</strong>
-            </div>
+
             
             <!-- Contracts section -->
             <div id="contractsBox" class="contracts-section hidden">
@@ -890,10 +883,12 @@
       return Math.floor(crew.baseCost * Math.pow(crew.scaling, crew.count));
     }
 
-    // Calculate the click interval for Snitches (halving time with each new snitch)
+    // Calculate the click interval for Snitches (first snitch clicks once per tick, subsequent snitches halve the time)
     function getSnitchClickInterval(snitch) {
       if (snitch.count === 0) return snitch.baseClickInterval;
-      return snitch.baseClickInterval / Math.pow(2, snitch.count - 1);
+      // First snitch clicks once per tick (interval = 1), each additional snitch halves the interval
+      if (snitch.count === 1) return 1;
+      return 1 / Math.pow(2, snitch.count - 1);
     }
 
     // Button type click value
@@ -986,9 +981,6 @@
 
     function updateUI() {
       $("credits").textContent = fmt0(state.credits);
-      $("ticks").textContent = fmt0(state.ticks);
-      const u = document.getElementById("unbanked");
-      if (u) u.textContent = fmt1(state.unbanked);
 
       // Novice Hunter UI
       const novice = crewTypes[0];
@@ -1146,7 +1138,7 @@
             const contract = contracts[state.currentContract];
             if (!state.contractActive) {
               contractArea.innerHTML = `<div class="row margin-top-sm">
-                <button id='takeContractBtn' class='btn cooldownable' data-cooldown-type='action'>Take Contract</button>
+                <button id='takeContractBtn' class='btn'>Take Contract</button>
                 <span class="text-secondary">${contract.description}</span>
               </div>`;
             } else {
@@ -1340,7 +1332,6 @@
     // Take Contract button event (delegated)
     document.addEventListener('click', function(e) {
       if (e.target && e.target.id === 'takeContractBtn') {
-        if (!canClick('action')) return;
         state.contractActive = true;
         state.contractProgress = 0;
         // Permanently remove hint after first contract is taken
@@ -1348,7 +1339,6 @@
         const hintEl = document.getElementById('contractsHint');
         if (hintEl) { try { hintEl.remove(); } catch {} }
         try { save(); } catch {}
-        startCooldown('action');
         const contract = contracts[state.currentContract];
         showToast(`Contract taken: ${contract.description}`);
         updateUI();
