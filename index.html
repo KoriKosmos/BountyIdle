@@ -148,10 +148,6 @@
         margin-top: var(--spacing-sm);
       }
 
-      .margin-top-md {
-        margin-top: var(--spacing-md);
-      }
-
       .margin-bottom-sm {
         margin-bottom: var(--spacing-sm);
       }
@@ -797,6 +793,8 @@
     const BASE_HUNT_COOLDOWN_MS = 1000;
     // Max purchases for reduce-cooldown: 20th removes cooldown entirely
     const REDUCE_CD_MAX_COUNT = 20;
+    // Floating point tolerance for comparisons (used for tick interval checks)
+    const EPSILON = 0.001;
 
     // Crew types data structure
     const crewTypes = [
@@ -1036,7 +1034,7 @@
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
         const interval = getSnitchClickInterval(snitch);
-        const tickText = Math.abs(interval - 1) < 0.001 ? "tick" : "ticks";
+        const tickText = Math.abs(interval - 1) < EPSILON ? "tick" : "ticks";
         snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
       const snitchHireRow = document.getElementById("snitchHireRow");
