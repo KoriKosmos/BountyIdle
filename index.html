@@ -10,98 +10,724 @@
     <title>Bounty Office</title>
     <!-- Internal CSS styles for layout and appearance -->
     <style>
-      /* Use system fonts for a modern look */
-      :root { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; }
-      /* Set body background and text color */
-      body { margin: 0; background: #0f1115; color: #e9e9ee; }
-      /* Center content and set max width */
-  .wrap { width: 560px; margin: 0 auto; padding: 24px; }
-      /* Style the main heading */
-      h1 { margin: 0 0 8px 0; font-size: 26px; }
-      /* Card container for main content */
-      .card { background: #14151c; border: 1px solid #232333; border-radius: 12px; padding: 14px; }
-      /* Row layout for items inside the card */
-      .row { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
-      /* Use tabular numbers for credit display */
-      .num { font-variant-numeric: tabular-nums; }
-      /* Style the button */
-      button { padding: 10px 12px; border-radius: 10px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer; position: relative; overflow: hidden; }
-      /* Button hover effect */
-      button:hover { background: #20212a; }
-      /* Disabled buttons */
-      button[disabled] { opacity: 0.65; cursor: not-allowed; }
-      button[disabled]:hover { background: #1b1b25; }
-      /* Cooldown overlay (width driven by --cdw) */
+      /* CSS Variables for consistent theming */
+      :root {
+        --bg-primary: #0f1115;
+        --bg-secondary: #14151c;
+        --bg-tertiary: #181922;
+        --border-color: #232333;
+        --text-primary: #e9e9ee;
+        --text-secondary: #aaa;
+        --text-accent: #9aa;
+        --accent-color: #ffb300;
+        --danger-color: #ff2d2d;
+        --success-color: #4caf50;
+        --button-bg: #1b1b25;
+        --button-hover: #20212a;
+        --button-disabled: #2b2b3a;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        --border-radius: 12px;
+        --border-radius-sm: 8px;
+        --spacing-xs: 8px;
+        --spacing-sm: 12px;
+        --spacing-md: 16px;
+        --spacing-lg: 18px;
+        --spacing-xl: 24px;
+        --spacing-2xl: 32px;
+        --font-size-sm: 13px;
+        --font-size-base: 15px;
+        --font-size-lg: 18px;
+        --font-size-xl: 20px;
+        --font-size-2xl: 26px;
+        --font-size-3xl: 32px;
+      }
+
+      /* Reset and base styles */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.5;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+
+      /* Responsive container */
+      .container {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--spacing-md);
+      }
+
+      /* Header section */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+        position: relative;
+      }
+
+      .header-left {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .header-right {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-end;
+        flex-shrink: 0;
+      }
+
+      .title {
+        font-size: var(--font-size-3xl);
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-primary);
+      }
+
+      /* Control buttons */
+      .control-btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+        background: var(--button-bg);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        min-height: 40px; /* Minimum touch target size */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .control-btn:hover {
+        background: var(--button-hover);
+        transform: translateY(-1px);
+      }
+
+      .control-btn.danger {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+      }
+
+      .control-btn.danger:hover {
+        background: #e02424;
+      }
+
+      .control-btn.active {
+        background: var(--button-disabled);
+      }
+
+      .last-saved {
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        text-align: right;
+      }
+
+      /* Main grid layout */
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xl);
+        margin-bottom: var(--spacing-2xl);
+      }
+
+      /* Save/Reset controls positioned at bottom right */
+      .save-controls {
+        position: fixed;
+        bottom: var(--spacing-lg);
+        right: var(--spacing-lg);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        z-index: 1000;
+      }
+
+      .save-controls .control-btn {
+        min-width: 140px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-sm);
+        border-radius: var(--border-radius-sm);
+        box-shadow: var(--shadow);
+      }
+
+      /* Responsive grid breakpoints */
+      @media (min-width: 768px) {
+        .main-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: var(--spacing-lg);
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .main-grid {
+          grid-template-columns: 280px 1fr 280px;
+          gap: var(--spacing-xl);
+        }
+      }
+
+      @media (min-width: 1400px) {
+        .main-grid {
+          grid-template-columns: 320px 1fr 320px;
+          gap: var(--spacing-2xl);
+        }
+      }
+
+      /* Card component */
+      .card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-lg);
+        box-shadow: var(--shadow);
+      }
+
+      .card-header {
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .card-title {
+        font-size: var(--font-size-2xl);
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-primary);
+      }
+
+      /* Main game area */
+      .game-area {
+        order: 1;
+      }
+
+      @media (min-width: 768px) {
+        .game-area {
+          order: 2;
+        }
+      }
+
+      /* Sidebar areas */
+      .sidebar-left {
+        order: 2;
+      }
+
+      .sidebar-right {
+        order: 3;
+      }
+
+      @media (min-width: 768px) {
+        .sidebar-left {
+          order: 1;
+        }
+        .sidebar-right {
+          order: 3;
+        }
+      }
+
+      /* Row layout for items */
+      .row {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        flex-wrap: wrap;
+      }
+
+      .row:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Button styles */
+      .btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+        background: var(--button-bg);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: var(--font-size-base);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        white-space: nowrap;
+        min-height: 44px; /* Minimum touch target size */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .btn:hover:not(:disabled) {
+        background: var(--button-hover);
+        transform: translateY(-1px);
+      }
+
+      .btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        background: var(--button-disabled);
+      }
+
+      .btn:disabled:hover {
+        transform: none;
+      }
+
+      .btn.primary {
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+        color: #000;
+        font-weight: 600;
+      }
+
+      .btn.primary:hover:not(:disabled) {
+        background: #e6a200;
+      }
+
+      /* Cooldown overlay */
       .cooldownable::after {
         content: "";
-        position: absolute; left: 0; top: 0; bottom: 0; width: var(--cdw, 0%);
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: var(--cdw, 0%);
         background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.12) 100%);
         transition: width 40ms linear;
         pointer-events: none;
       }
+
+      /* Typography helpers */
+      .num {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+
+      .text-secondary {
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+      }
+
+      .text-accent {
+        color: var(--text-accent);
+      }
+
+      /* Upgrade rows */
+      .upgrade-row {
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-sm);
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+      }
+
+      .upgrade-row:hover {
+        background: var(--bg-secondary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+      }
+
+      .upgrade-row.maxed {
+        opacity: 0.6;
+      }
+
+      .upgrade-row.maxed:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .upgrade-info {
+        margin-top: var(--spacing-xs);
+        margin-left: var(--spacing-xs);
+        line-height: 1.4;
+      }
+
+      /* Contracts section */
+      .contracts-section {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+      }
+
+      .contracts-title {
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+        margin: 0 0 var(--spacing-sm) 0;
+        color: var(--text-primary);
+      }
+
+      .contracts-hint {
+        margin-bottom: var(--spacing-md);
+        line-height: 1.6;
+      }
+
+      .contracts-warning {
+        color: var(--accent-color);
+        font-weight: 600;
+      }
+
+      /* Toast notifications */
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: var(--spacing-2xl);
+        transform: translateX(-50%);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: var(--spacing-sm) var(--spacing-xl);
+        border-radius: var(--border-radius-sm);
+        font-size: var(--font-size-base);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+        z-index: 1000;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* Mobile optimizations */
+      @media (max-width: 767px) {
+        .container {
+          padding: var(--spacing-sm);
+        }
+
+        .header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: var(--spacing-sm);
+        }
+
+        .header-right {
+          align-items: stretch;
+          flex-direction: row;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: var(--spacing-xs);
+        }
+
+        .title {
+          font-size: var(--font-size-2xl);
+          text-align: center;
+        }
+
+        .control-btn {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          font-size: var(--font-size-sm);
+          flex: 1;
+          min-width: 0;
+        }
+
+        .card {
+          padding: var(--spacing-md);
+        }
+
+        .card-title {
+          font-size: var(--font-size-xl);
+        }
+
+        .btn {
+          padding: var(--spacing-sm);
+          font-size: var(--font-size-sm);
+        }
+
+        .row {
+          flex-direction: column;
+          align-items: stretch;
+          gap: var(--spacing-xs);
+        }
+
+        .upgrade-row {
+          padding: var(--spacing-xs);
+        }
+
+        .upgrade-row-mobile .row {
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .upgrade-row .btn {
+          flex: 1;
+          margin-right: var(--spacing-sm);
+          min-width: 0;
+          white-space: normal;
+          height: auto;
+          line-height: 1.3;
+        }
+
+        .main-grid {
+          gap: var(--spacing-md);
+        }
+      }
+
+      /* Small mobile devices */
+      @media (max-width: 480px) {
+        .container {
+          padding: var(--spacing-xs);
+        }
+
+        .header-right {
+          flex-direction: column;
+          align-items: stretch;
+          gap: var(--spacing-xs);
+        }
+
+        .control-btn {
+          width: 100%;
+          text-align: center;
+          padding: var(--spacing-sm);
+        }
+
+        .card {
+          padding: var(--spacing-sm);
+        }
+
+        .btn {
+          width: 100%;
+          text-align: center;
+          padding: var(--spacing-sm);
+        }
+
+        .title {
+          font-size: var(--font-size-xl);
+        }
+
+        .card-title {
+          font-size: var(--font-size-lg);
+        }
+
+        .main-grid {
+          gap: var(--spacing-sm);
+        }
+
+        .save-controls {
+          position: fixed;
+          bottom: var(--spacing-sm);
+          right: var(--spacing-sm);
+          left: var(--spacing-sm);
+          flex-direction: row;
+          justify-content: center;
+        }
+
+        .save-controls .control-btn {
+          flex: 1;
+          min-width: 0;
+          padding: var(--spacing-sm);
+        }
+      }
+
+      /* High DPI displays */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .card {
+          /* Use box-shadow to simulate a thin border on high DPI displays */
+          border-width: 1px;
+          box-shadow: 0 0 0 0.5px var(--border-color, #e0e0e0);
+        }
+      }
+
+      /* Dark mode support */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-primary: #0a0a0a;
+          --bg-secondary: #0f0f0f;
+          --bg-tertiary: #141414;
+        }
+      }
+
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        .btn,
+        .control-btn {
+          transition: none;
+        }
+        
+        .btn:hover:not(:disabled) {
+          transform: none;
+        }
+      }
+
+      /* Focus styles for accessibility */
+      .btn:focus,
+      .control-btn:focus {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 2px;
+      }
+
+      /* Loading states */
+      .loading {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      /* Success/error states */
+      .success {
+        border-color: var(--success-color);
+      }
+
+      .error {
+        border-color: var(--danger-color);
+      }
+
+      /* Landscape mobile optimizations */
+      @media (max-height: 500px) and (orientation: landscape) {
+        .container {
+          padding: var(--spacing-xs);
+        }
+
+        .header {
+          margin-bottom: var(--spacing-sm);
+        }
+
+        .title {
+          font-size: var(--font-size-xl);
+        }
+
+        .card {
+          padding: var(--spacing-sm);
+        }
+
+        .card-title {
+          font-size: var(--font-size-lg);
+        }
+
+        .main-grid {
+          gap: var(--spacing-sm);
+        }
+      }
+
+      /* Print styles */
+      @media print {
+        .control-btn,
+        .btn {
+          display: none;
+        }
+
+        .card {
+          border: 1px solid #000;
+          box-shadow: none;
+        }
+      }
     </style>
-  <body>
-    <!-- Main wrapper for page content -->
-  <!-- Reset Save Button in top right -->
-  <button id="manualSaveBtn" style="position: absolute; top: 18px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #1b1b25; color: #fff; cursor: pointer;">Manual Save</button>
-  <button id="autosaveToggleBtn" style="position: absolute; top: 54px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #2b2b3a; background: #232333; color: #fff; cursor: pointer;">Autosave ON</button>
-  <button id="resetBtn" style="position: absolute; top: 90px; right: 24px; z-index: 10; padding: 8px 14px; border-radius: 8px; border: 1px solid #b00020; background: #ff2d2d; color: #fff; cursor: pointer; font-weight: bold;">Reset Save</button>
-  <div id="lastSaved" style="position: absolute; top: 126px; right: 24px; color: #aaa; font-size: 13px;">Last saved just now</div>
-  <div id="autosavePopup" style="position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); background: #232333; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 1000;">Game autosaved!</div>
-  <div id="gameToast" style="position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%); background: #2b2b3a; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 1000;"></div>
-  <div style="position: relative; width: 100vw; min-height: 100vh;">
-  <!-- Left Sidebar: Crew + Upgrades side-by-side -->
-  <div style="position: absolute; left: 0; top: 0; display: flex; flex-direction: row; gap: 12px; margin: 18px 0 18px 24px; flex-shrink: 0; z-index: 2;">
-      <div id="crewArea" class="card" style="width: 200px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
-        <h1 style="font-size: 26px; margin: 0 0 18px 0;">Crew</h1>
-        <div id="hireRow" style="margin-bottom: 16px; display:none; width: 100%;">
-        <div style="display: flex; align-items: center;">
-          <button id="hireBtn" class="cooldownable" data-cooldown-type="hire" style="margin-left: 0;">Hire Novice Hunter</button>
-          <span id="hireCostSpan" style="margin-left: 12px;">Cost: 20</span>
+    <body>
+    <!-- Toast notifications -->
+    <div id="autosavePopup" class="toast">Game autosaved!</div>
+    <div id="gameToast" class="toast"></div>
+
+    <div class="container">
+      <!-- Header section -->
+      <header class="header">
+        <div class="header-left">
+          <!-- Title removed as requested -->
         </div>
-        <div id="hirePerTick" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">+0.5 credits/tick</div>
-        <div id="hireCostBelow" style="font-size: 13px; color: #aaa; margin-top: 2px; margin-left: 2px;">Hired: 0</div>
+        <div class="header-right">
+          <div id="lastSaved" class="last-saved">Last saved just now</div>
         </div>
-      </div>
-      <div id="upgradesArea" class="card" style="width: 220px; display: flex; flex-direction: column; align-items: flex-start; padding: 18px;">
-        <h1 style="font-size: 26px; margin: 0 0 18px 0;">Upgrades</h1>
-        <div id="upgradeArea" style="width: 100%;"></div>
+      </header>
+
+      <!-- Main grid layout -->
+      <main class="main-grid">
+        <!-- Left sidebar: Crew -->
+        <aside class="sidebar-left">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Crew</h2>
+            </div>
+            <div id="hireRow" style="display:none;">
+              <div class="row">
+                <button id="hireBtn" class="btn cooldownable" data-cooldown-type="hire">Hire Novice Hunter</button>
+              </div>
+              <div class="row">
+                <span id="hireCostSpan" class="text-secondary">Cost: 20</span>
+              </div>
+              <div id="hirePerTick" class="text-accent">+0.5 credits/tick</div>
+              <div id="hireCostBelow" class="text-secondary">Hired: 0</div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main game area -->
+        <section class="game-area">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Bounty Office</h2>
+            </div>
+            <div class="row">
+              <span>Credits:</span>
+              <strong class="num" id="credits">0</strong>
+            </div>
+            <div class="row">
+              <button id="huntBtn" class="btn primary cooldownable action-btn" data-btn-type="action" data-cooldown-type="action">Hunt petty bounty</button>
+              <span id="clickInfo" class="text-secondary">+1 credit</span>
+            </div>
+            <div class="row">
+              <button id="contractClickBtn" class="btn cooldownable action-btn" data-btn-type="action" data-cooldown-type="action" style="display:none;">Advance contract</button>
+            </div>
+            <div class="row" style="display:none">
+              <span>Ticks:</span>
+              <strong class="num" id="ticks">0</strong>
+            </div>
+            <div class="row" style="display:none">
+              <span>Unbanked:</span>
+              <strong class="num" id="unbanked">0.0</strong>
+            </div>
+            
+            <!-- Contracts section -->
+            <div id="contractsBox" class="contracts-section" style="display:none;">
+              <h3 class="contracts-title">Contracts</h3>
+              <div id="contractsHint" class="contracts-hint">
+                New contracts will appear here!<br>
+                <span class="contracts-warning">WARNING: Contracts take a long time to fulfill!</span>
+              </div>
+              <div id="contractArea"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right sidebar: Upgrades -->
+        <aside class="sidebar-right">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Upgrades</h2>
+            </div>
+            <div id="upgradeArea"></div>
+          </div>
+        </aside>
+      </main>
+      
+      <!-- Save/Reset buttons moved to bottom right -->
+      <div class="save-controls">
+        <button id="manualSaveBtn" class="control-btn">Manual Save</button>
+        <button id="autosaveToggleBtn" class="control-btn active">Autosave ON</button>
+        <button id="resetBtn" class="control-btn danger">Reset Save</button>
       </div>
     </div>
-    <div style="flex: 1 1 auto;"></div>
-    <!-- Main wrapper for page content -->
-    <div style="display: flex; justify-content: center; align-items: flex-start; width: 100vw; min-height: 100vh;">
-  <div class="wrap" style="margin: 18px 0;">
-        <!-- Page title -->
-        <h1>Bounty Office</h1>
-        <!-- Card displays credits and action button -->
-        <div class="card">
-          <div class="row">
-            <span>Credits:</span>
-            <strong class="num" id="credits">0</strong>
-          </div>
-          <div class="row">
-          <button id="huntBtn" class="cooldownable action-btn" data-btn-type="action" data-cooldown-type="action">Hunt petty bounty</button>
-          <span id="clickInfo">+1 credit</span>
-          <button id="contractClickBtn" class="cooldownable action-btn" data-btn-type="action" data-cooldown-type="action" style="display:none; margin-left: 8px;">Advance contract</button>
-          </div>
-          <div class="row" style="display:none">
-            <span>Ticks:</span>
-            <strong class="num" id="ticks">0</strong>
-          </div>
-          <div class="row" style="display:none">
-            <span>Unbanked:</span>
-            <strong class="num" id="unbanked">0.0</strong>
-          </div>
-          <div id="contractsBox" style="display:none; margin-top: 18px; padding: 14px; background: #181922; border-radius: 10px; border: 1px solid #232333; color: #e9e9ee;">
-            <h2 style="margin: 0 0 8px 0; font-size: 20px;">Contracts</h2>
-            <div id="contractsHint">New contracts will appear here!<br><span style="color:#ffb300;font-weight:bold;">WARNING: Contracts take a long time to fulfill!</span></div>
-            <div id="contractArea"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
     <!-- JavaScript for interactive functionality -->
     <script>
@@ -303,7 +929,6 @@
       }
 
       // Upgrades UI
-      const upgradesArea = document.getElementById("upgradesArea");
       const upgradeArea = document.getElementById("upgradeArea");
       if (upgradeArea) {
         // Render all upgrades
@@ -316,7 +941,7 @@
           if (up.id === 'reduceCooldown') {
             const count = (state.upgrades && state.upgrades[up.id]) || 0;
             const net = Math.min(100, 5 * count);
-            extra = ` <span style='color:#9aa;'>• Net: ${net}%</span>`;
+            extra = ` <span class="text-accent">• Net: ${net}%</span>`;
           }
           // Determine maxed state (for reduceCooldown)
           let isMaxed = false;
@@ -327,12 +952,14 @@
           const count = (state.upgrades && state.upgrades[up.id]) || 0;
           const shouldShow = count > 0 || state.credits >= up.baseCost;
           if (!shouldShow) continue;
-          html += `<div class='upgradeRow' style='margin-bottom: 12px;'>
-            <div style='display:flex; align-items:center; ${isMaxed ? "opacity:0.6;" : ""}'>
-              <button data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""} style='margin-left:0;'>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
-              <span style='margin-left:12px;'>${isMaxed ? '' : `Cost: ${cost}`}</span>
+          const maxedClass = isMaxed ? "maxed" : "";
+          const mobileClass = window.innerWidth <= 768 ? "upgrade-row-mobile" : "";
+          html += `<div class="upgrade-row ${maxedClass} ${mobileClass}">
+            <div class="row">
+              <button class="btn" data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""}>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
+              <span class="text-secondary">${isMaxed ? '' : `Cost: ${cost}`}</span>
             </div>
-            <div style='font-size:13px; color:#aaa; margin-top:2px; margin-left:2px;'>${up.description}${extra}</div>
+            <div class="upgrade-info text-secondary">${up.description}${extra}</div>
           </div>`;
         }
         upgradeArea.innerHTML = html;
@@ -363,9 +990,9 @@
           if (contractArea) {
             const contract = contracts[state.currentContract];
             if (!state.contractActive) {
-              contractArea.innerHTML = `<div style='display: flex; align-items: center; margin-top: 12px;'>
-                <button id='takeContractBtn' class='cooldownable' data-cooldown-type='action' style='padding: 8px 16px; border-radius: 8px; background: #2b2b3a; color: #fff; border: none; cursor: pointer;'>Take Contract</button>
-                <span style='margin-left: 16px;'>${contract.description}</span>
+              contractArea.innerHTML = `<div class="row" style="margin-top: 12px;">
+                <button id='takeContractBtn' class='btn cooldownable' data-cooldown-type='action'>Take Contract</button>
+                <span class="text-secondary">${contract.description}</span>
               </div>`;
             } else {
               contractArea.innerHTML = `<div style='margin-top: 12px;'>
@@ -614,8 +1241,8 @@
     function showAutosavePopup() {
       const popup = document.getElementById("autosavePopup");
       if (!popup) return;
-      popup.style.opacity = "1";
-      setTimeout(() => { popup.style.opacity = "0"; }, 3000);
+      popup.classList.add("show");
+      setTimeout(() => { popup.classList.remove("show"); }, 3000);
     }
 
     // Generic toast helper (separate from autosave)
@@ -623,8 +1250,8 @@
       const el = document.getElementById("gameToast");
       if (!el) return;
       el.textContent = message;
-      el.style.opacity = "1";
-      setTimeout(() => { el.style.opacity = "0"; }, 3000);
+      el.classList.add("show");
+      setTimeout(() => { el.classList.remove("show"); }, 3000);
     }
 
     // Smoothly update hunt cooldown visual and disabled state
@@ -721,6 +1348,19 @@
         location.reload();
       });
     }
+
+    // Window resize listener to update mobile classes
+    window.addEventListener('resize', () => {
+      // Update upgrade rows with mobile class if needed
+      const upgradeRows = document.querySelectorAll('.upgrade-row');
+      upgradeRows.forEach(row => {
+        if (window.innerWidth <= 768) {
+          row.classList.add('upgrade-row-mobile');
+        } else {
+          row.classList.remove('upgrade-row-mobile');
+        }
+      });
+    });
   </script>
   </body>
 </html>
