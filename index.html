@@ -1971,6 +1971,10 @@
           crew.count = count;
           document.getElementById('devCrewCount').value = '';
           updateUI();
+          // Update snitch autoclicker timer if snitch count changed
+          if (crewType === 'snitch') {
+            updateSnitchAutoclicker();
+          }
           showToast(`${crew.name} count set to ${count}`);
         }
       }
@@ -1982,6 +1986,10 @@
       if (crew) {
         crew.count += amount;
         updateUI();
+        // Update snitch autoclicker timer if snitch count changed
+        if (crewType === 'snitch') {
+          updateSnitchAutoclicker();
+        }
         showToast(`Added ${amount} ${crew.name}`);
       }
     }
@@ -2060,6 +2068,7 @@
       
       applyUpgradeEffect('reduceCooldown');
       applyUpgradeEffect('doubleClick');
+      // Update snitch autoclicker timer after maxing out crew
       updateSnitchAutoclicker();
       updateUI();
       showToast('Everything maxed out!');
@@ -2101,13 +2110,15 @@
                 Object.assign(state, saveData.state);
                 if (Array.isArray(saveData.crewTypes)) {
                   for (let i = 0; i < crewTypes.length; ++i) {
-                    Object.assign(crewTypes[i], saveData.crewTypes[i]);
-                  }
-                }
-                updateUI();
-                applyUpgradeEffect('reduceCooldown');
-                applyUpgradeEffect('doubleClick');
-                showToast('Save imported successfully!');
+                                    Object.assign(crewTypes[i], saveData.crewTypes[i]);
+              }
+            }
+            updateUI();
+            applyUpgradeEffect('reduceCooldown');
+            applyUpgradeEffect('doubleClick');
+            // Update snitch autoclicker timer after importing save data
+            updateSnitchAutoclicker();
+            showToast('Save imported successfully!');
               } else {
                 showToast('Invalid save file');
               }
