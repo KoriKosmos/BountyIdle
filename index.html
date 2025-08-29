@@ -20,6 +20,7 @@
         --text-secondary: #aaa;
         --text-accent: #9aa;
         --accent-color: #ffb300;
+        --accent-hover: #e6a200;
         --danger-color: #ff2d2d;
         --success-color: #4caf50;
         --button-bg: #1b1b25;
@@ -811,7 +812,7 @@
       }
 
       .dev-input-group button:hover {
-        background: #e6a200;
+        background: var(--accent-hover);
         transform: translateY(-1px);
       }
 
@@ -1907,7 +1908,7 @@
             <h4>Game State</h4>
             <div class="dev-button-group">
               <button onclick="unlockContracts()">Unlock Contracts</button>
-              <button onclick="completeContract()">Complete Current Contract</button>
+              <button onclick="completeContractDev()">Complete Current Contract</button>
               <button onclick="resetCooldowns()">Reset Cooldowns</button>
               <button onclick="toggleDevMode()">Toggle Dev Mode</button>
             </div>
@@ -2017,9 +2018,11 @@
       showToast('Contracts unlocked!');
     }
 
-    function completeContract() {
+    function completeContractDev() {
       if (state.contractActive) {
         const contract = contracts[state.currentContract];
+        // Call the existing completeContract function with the contract parameter
+        // This is the function that actually handles contract completion logic
         completeContract(contract);
         updateUI();
         showToast('Contract completed!');
