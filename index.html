@@ -793,8 +793,10 @@
     const BASE_HUNT_COOLDOWN_MS = 1000;
     // Max purchases for reduce-cooldown: 20th removes cooldown entirely
     const REDUCE_CD_MAX_COUNT = 20;
-    // Floating point tolerance for comparisons (used for tick interval checks)
-    const EPSILON = 0.001;
+    // Threshold for determining single vs multiple tick intervals
+    const SINGLE_TICK_THRESHOLD = 1;
+    // Floating point tolerance for tick interval comparisons
+    const TICK_INTERVAL_TOLERANCE = 0.001;
 
     // Crew types data structure
     const crewTypes = [
@@ -1034,7 +1036,7 @@
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
         const interval = getSnitchClickInterval(snitch);
-        const tickText = Math.abs(interval - 1) < EPSILON ? "tick" : "ticks";
+        const tickText = Math.abs(interval - SINGLE_TICK_THRESHOLD) < TICK_INTERVAL_TOLERANCE ? "tick" : "ticks";
         snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
       const snitchHireRow = document.getElementById("snitchHireRow");
@@ -1188,7 +1190,9 @@
         state.credits -= cost;
         snitch.count += 1;
         startCooldown('hire');
-        showToast(`Hired ${snitch.name}! Autoclicks every ${getSnitchClickInterval(snitch).toFixed(1)} tick(s)`);
+        const interval = getSnitchClickInterval(snitch);
+        const tickText = Math.abs(interval - SINGLE_TICK_THRESHOLD) < TICK_INTERVAL_TOLERANCE ? "tick" : "ticks";
+        showToast(`Hired ${snitch.name}! Autoclicks every ${interval.toFixed(1)} ${tickText}`);
         updateUI();
       });
     }
