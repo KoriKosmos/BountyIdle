@@ -152,6 +152,25 @@
         margin-bottom: var(--spacing-2xl);
       }
 
+      /* Save/Reset controls positioned at bottom right */
+      .save-controls {
+        position: fixed;
+        bottom: var(--spacing-lg);
+        right: var(--spacing-lg);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        z-index: 1000;
+      }
+
+      .save-controls .control-btn {
+        min-width: 140px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-sm);
+        border-radius: var(--border-radius-sm);
+        box-shadow: var(--shadow);
+      }
+
       /* Responsive grid breakpoints */
       @media (min-width: 768px) {
         .main-grid {
@@ -448,7 +467,7 @@
           padding: var(--spacing-xs);
         }
 
-        .upgrade-row .row {
+        .upgrade-row-mobile .row {
           flex-direction: row;
           align-items: center;
           justify-content: space-between;
@@ -506,6 +525,21 @@
 
         .main-grid {
           gap: var(--spacing-sm);
+        }
+
+        .save-controls {
+          position: fixed;
+          bottom: var(--spacing-sm);
+          right: var(--spacing-sm);
+          left: var(--spacing-sm);
+          flex-direction: row;
+          justify-content: center;
+        }
+
+        .save-controls .control-btn {
+          flex: 1;
+          min-width: 0;
+          padding: var(--spacing-sm);
         }
       }
 
@@ -610,12 +644,9 @@
       <!-- Header section -->
       <header class="header">
         <div class="header-left">
-          <h1 class="title">Bounty Office</h1>
+          <!-- Title removed as requested -->
         </div>
         <div class="header-right">
-          <button id="manualSaveBtn" class="control-btn">Manual Save</button>
-          <button id="autosaveToggleBtn" class="control-btn active">Autosave ON</button>
-          <button id="resetBtn" class="control-btn danger">Reset Save</button>
           <div id="lastSaved" class="last-saved">Last saved just now</div>
         </div>
       </header>
@@ -645,7 +676,7 @@
         <section class="game-area">
           <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Game</h2>
+              <h2 class="card-title">Bounty Office</h2>
             </div>
             <div class="row">
               <span>Credits:</span>
@@ -689,6 +720,13 @@
           </div>
         </aside>
       </main>
+      
+      <!-- Save/Reset buttons moved to bottom right -->
+      <div class="save-controls">
+        <button id="manualSaveBtn" class="control-btn">Manual Save</button>
+        <button id="autosaveToggleBtn" class="control-btn active">Autosave ON</button>
+        <button id="resetBtn" class="control-btn danger">Reset Save</button>
+      </div>
     </div>
 
     <!-- JavaScript for interactive functionality -->
@@ -915,7 +953,8 @@
           const shouldShow = count > 0 || state.credits >= up.baseCost;
           if (!shouldShow) continue;
           const maxedClass = isMaxed ? "maxed" : "";
-          html += `<div class="upgrade-row ${maxedClass}">
+          const mobileClass = window.innerWidth <= 768 ? "upgrade-row-mobile" : "";
+          html += `<div class="upgrade-row ${maxedClass} ${mobileClass}">
             <div class="row">
               <button class="btn" data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""}>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
               <span class="text-secondary">${isMaxed ? '' : `Cost: ${cost}`}</span>
@@ -1309,6 +1348,19 @@
         location.reload();
       });
     }
+
+    // Window resize listener to update mobile classes
+    window.addEventListener('resize', () => {
+      // Update upgrade rows with mobile class if needed
+      const upgradeRows = document.querySelectorAll('.upgrade-row');
+      upgradeRows.forEach(row => {
+        if (window.innerWidth <= 768) {
+          row.classList.add('upgrade-row-mobile');
+        } else {
+          row.classList.remove('upgrade-row-mobile');
+        }
+      });
+    });
   </script>
   </body>
 </html>
