@@ -512,7 +512,9 @@
       /* High DPI displays */
       @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
         .card {
-          border-width: 0.5px;
+          /* Use box-shadow to simulate a thin border on high DPI displays */
+          border-width: 1px;
+          box-shadow: 0 0 0 0.5px var(--border-color, #e0e0e0);
         }
       }
 
