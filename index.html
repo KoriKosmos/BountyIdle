@@ -886,8 +886,9 @@
     // Calculate the click interval for Snitches (first snitch clicks once per tick, subsequent snitches halve the time)
     function getSnitchClickInterval(snitch) {
       if (snitch.count === 0) return snitch.baseClickInterval;
-      // First snitch clicks once per tick, each additional snitch halves the interval
-      return snitch.baseClickInterval / Math.pow(2, snitch.count - 1);
+      // First snitch clicks once per tick (interval = 1), each additional snitch halves the interval
+      if (snitch.count === 1) return 1;
+      return 1 / Math.pow(2, snitch.count - 1);
     }
 
     // Button type click value
