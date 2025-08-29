@@ -140,20 +140,20 @@
 
       /* Utility classes for display states */
       .hidden {
-        display: none !important;
+        display: none;
       }
 
       /* Margin utility classes */
       .margin-top-sm {
-        margin-top: var(--spacing-sm) !important;
+        margin-top: var(--spacing-sm);
       }
 
       .margin-top-md {
-        margin-top: var(--spacing-md) !important;
+        margin-top: var(--spacing-md);
       }
 
       .margin-bottom-sm {
-        margin-bottom: var(--spacing-sm) !important;
+        margin-bottom: var(--spacing-sm);
       }
 
       .last-saved {
@@ -1036,18 +1036,18 @@
       const snitchPerTick = document.getElementById("snitchPerTick");
       if (snitchPerTick) {
         const interval = getSnitchClickInterval(snitch);
-        const tickText = interval === 1 ? "tick" : "ticks";
+        const tickText = Math.abs(interval - 1) < 0.001 ? "tick" : "ticks";
         snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
       }
       const snitchHireRow = document.getElementById("snitchHireRow");
-              if (snitchHireRow) {
-          if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
-            snitchHireRow.classList.remove("hidden");
-            snitch.revealed = true;
-          } else {
-            snitchHireRow.classList.add("hidden");
-          }
+      if (snitchHireRow) {
+        if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
+          snitchHireRow.classList.remove("hidden");
+          snitch.revealed = true;
+        } else {
+          snitchHireRow.classList.add("hidden");
         }
+      }
       // Grey out Snitch Hire button when unaffordable or on cooldown
       const snitchHireButton = document.getElementById('snitchHireBtn');
       if (snitchHireButton) {
