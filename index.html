@@ -1005,7 +1005,7 @@
           // Persist immediately so refresh keeps it
           try { save(); } catch {}
           // Show one-time toast when contracts unlock
-          try { showToast("Contracts unlocked!"); } catch {}
+          showToast("Contracts unlocked!");
         }
 
         if (state.flags.contractsUnlocked) {
@@ -1276,71 +1276,88 @@
     const toastContainer = document.getElementById("toastContainer");
     const MAX_TOASTS = 5; // Maximum number of toasts to show at once
 
-    function createToast(message, type = "info") {
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.textContent = message;
-      toast.dataset.toastId = ++toastCounter;
-      
-      // Add type-specific styling
-      if (type === "autosave") {
-        toast.style.borderLeft = "4px solid var(--accent-color)";
-      } else if (type === "manual-save") {
-        toast.style.borderLeft = "4px solid var(--success-color)";
-      }
-      
-      // Add to container
-      toastContainer.appendChild(toast);
-      
-      // Remove oldest toast if we exceed the maximum
-      const toasts = toastContainer.querySelectorAll('.toast');
-      if (toasts.length > MAX_TOASTS) {
-        const oldestToast = toasts[0];
-        oldestToast.classList.add("fade-out");
-        setTimeout(() => {
-          if (oldestToast.parentNode) {
-            oldestToast.parentNode.removeChild(oldestToast);
-          }
-        }, 300);
-      }
-      
-      // Show toast
-      requestAnimationFrame(() => {
-        toast.classList.add("show");
-      });
-      
-      // Auto-remove after 3 seconds
-      setTimeout(() => {
-        toast.classList.add("fade-out");
-        setTimeout(() => {
-          if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-          }
-        }, 500);
-      }, 3000);
-      
-      // Also remove if user navigates away
-      const observer = new MutationObserver(() => {
-        if (!toast.parentNode) {
-          observer.disconnect();
+    // Helper function to safely create and show toasts with error handling
+    function createToastSafely(message, type = "info") {
+      try {
+        // Check if toast container is available
+        if (!toastContainer) {
+          console.warn("Toast container not available, skipping toast:", message);
+          return null;
         }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-      
-      return toast;
+
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        toast.dataset.toastId = ++toastCounter;
+        
+        // Add type-specific styling
+        if (type === "autosave") {
+          toast.style.borderLeft = "4px solid var(--accent-color)";
+        } else if (type === "manual-save") {
+          toast.style.borderLeft = "4px solid var(--success-color)";
+        }
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Remove oldest toast if we exceed the maximum
+        const toasts = toastContainer.querySelectorAll('.toast');
+        if (toasts.length > MAX_TOASTS) {
+          const oldestToast = toasts[0];
+          oldestToast.classList.add("fade-out");
+          setTimeout(() => {
+            if (oldestToast.parentNode) {
+              oldestToast.parentNode.removeChild(oldestToast);
+            }
+          }, 300);
+        }
+        
+        // Show toast
+        requestAnimationFrame(() => {
+          toast.classList.add("show");
+        });
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+          toast.classList.add("fade-out");
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 500);
+        }, 3000);
+        
+        // Also remove if user navigates away
+        const observer = new MutationObserver(() => {
+          if (!toast.parentNode) {
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        return toast;
+      } catch (error) {
+        console.error("Failed to create toast:", error);
+        return null;
+      }
+    }
+
+    // Legacy function for backward compatibility
+    function createToast(message, type = "info") {
+      return createToastSafely(message, type);
     }
 
     function showAutosaveToast() {
-      createToast("Game autosaved!", "autosave");
+      createToastSafely("Game autosaved!", "autosave");
     }
 
     function showManualSaveToast() {
-      createToast("Game manually saved!", "manual-save");
+      createToastSafely("Game manually saved!", "manual-save");
     }
 
     // Generic toast helper
     function showToast(message) {
-      createToast(message, "info");
+      createToastSafely(message, "info");
     }
 
     // Smoothly update hunt cooldown visual and disabled state
