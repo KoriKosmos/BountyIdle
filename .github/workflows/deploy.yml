@@ -9,33 +9,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: List files before deployment
+      - name: List workspace contents
         run: |
-          echo "Current working directory: $(pwd)"
-          echo "Files in current directory:"
-          ls -la
-          echo "Files in root:"
-          ls -la /
-          echo "GitHub workspace: $GITHUB_WORKSPACE"
-          echo "Files in GitHub workspace:"
+          echo "=== GitHub workspace contents ==="
           ls -la $GITHUB_WORKSPACE
+          echo "=== File count in workspace ==="
+          find $GITHUB_WORKSPACE -type f -not -path "$GITHUB_WORKSPACE/.git/*" -not -path "$GITHUB_WORKSPACE/.github/*" | wc -l
         
       - name: Prepare deployment files
         run: |
           # Create a clean deployment directory
           mkdir -p dist
-          # Copy all files except git and github directories
-          cp .gitignore dist/ 2>/dev/null || true
-          cp index.html dist/ 2>/dev/null || true
-          cp LICENSE dist/ 2>/dev/null || true
-          cp README.md dist/ 2>/dev/null || true
-          # Remove git and github directories from deployment
+          
+          # Use rsync to copy all files except .git and .github directories
+          # rsync is more robust and handles exclusions better than cp
+          rsync -av --exclude='.git' --exclude='.github' --exclude='dist' ./ dist/
+          
           echo "=== Deployment directory contents ==="
           ls -la dist/
-          echo "=== Deployment directory file count ==="
-          find dist/ -type f | wc -l
-          echo "=== All files to be deployed ==="
+          echo "=== Files to be deployed ==="
           find dist/ -type f | sort
+          echo "=== Total deployment file count ==="
+          find dist/ -type f | wc -l
         
       - name: deploy2nekoweb
         uses: indiefellas/deploy2nekoweb@main
