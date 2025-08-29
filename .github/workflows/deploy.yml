@@ -1,20 +1,19 @@
-on: [push, page_build, pull_request]
+on: [push, pull_request]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
-    name: deploy2nekoweb
+    name: Deploy to NekoWeb
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         
-      # your build step here
-        
-      - name: deploy2nekoweb
+      - name: Deploy to NekoWeb
         uses: indiefellas/deploy2nekoweb@main
         with:
           nekoweb-api-key: ${{ secrets.NEKOWEB_API_KEY }}
           nekoweb-cookie: ${{ secrets.NEKOWEB_COOKIE }}
           nekoweb-domain: 'bountyidle.nekoweb.org'
           nekoweb-username: 'bountyidle'
-          directory: '/'
+          directory: '.'
