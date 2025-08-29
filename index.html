@@ -391,10 +391,7 @@
 
       /* Toast notifications */
       .toast {
-        position: fixed;
-        left: 50%;
-        bottom: var(--spacing-2xl);
-        transform: translateX(-50%);
+        position: relative;
         background: var(--bg-tertiary);
         color: var(--text-primary);
         padding: var(--spacing-sm) var(--spacing-xl);
@@ -402,14 +399,37 @@
         font-size: var(--font-size-base);
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.5s ease;
-        z-index: 1000;
+        transition: all 0.5s ease;
         box-shadow: var(--shadow);
         border: 1px solid var(--border-color);
+        max-width: 300px;
+        text-align: center;
+        word-wrap: break-word;
+        transform: translateY(10px);
       }
 
       .toast.show {
         opacity: 1;
+        transform: translateY(0);
+      }
+
+      .toast.fade-out {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      /* Toast container for stacking */
+      .toast-container {
+        position: fixed;
+        left: 50%;
+        bottom: var(--spacing-2xl);
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-sm);
+        pointer-events: none;
       }
 
       /* Mobile optimizations */
@@ -484,6 +504,18 @@
 
         .main-grid {
           gap: var(--spacing-md);
+        }
+
+        .toast-container {
+          left: 20px;
+          right: 20px;
+          transform: none;
+          bottom: var(--spacing-lg);
+        }
+
+        .toast {
+          max-width: none;
+          width: 100%;
         }
       }
 
@@ -637,8 +669,7 @@
     </style>
     <body>
     <!-- Toast notifications -->
-    <div id="autosavePopup" class="toast">Game autosaved!</div>
-    <div id="gameToast" class="toast"></div>
+    <div class="toast-container" id="toastContainer"></div>
 
     <div class="container">
       <!-- Header section -->
@@ -1238,20 +1269,78 @@
     }
     setInterval(updateLastSaved, 1000);
 
-    function showAutosavePopup() {
-      const popup = document.getElementById("autosavePopup");
-      if (!popup) return;
-      popup.classList.add("show");
-      setTimeout(() => { popup.classList.remove("show"); }, 3000);
+
+
+    // Toast management system
+    let toastCounter = 0;
+    const toastContainer = document.getElementById("toastContainer");
+    const MAX_TOASTS = 5; // Maximum number of toasts to show at once
+
+    function createToast(message, type = "info") {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = message;
+      toast.dataset.toastId = ++toastCounter;
+      
+      // Add type-specific styling
+      if (type === "autosave") {
+        toast.style.borderLeft = "4px solid var(--accent-color)";
+      } else if (type === "manual-save") {
+        toast.style.borderLeft = "4px solid var(--success-color)";
+      }
+      
+      // Add to container
+      toastContainer.appendChild(toast);
+      
+      // Remove oldest toast if we exceed the maximum
+      const toasts = toastContainer.querySelectorAll('.toast');
+      if (toasts.length > MAX_TOASTS) {
+        const oldestToast = toasts[0];
+        oldestToast.classList.add("fade-out");
+        setTimeout(() => {
+          if (oldestToast.parentNode) {
+            oldestToast.parentNode.removeChild(oldestToast);
+          }
+        }, 300);
+      }
+      
+      // Show toast
+      requestAnimationFrame(() => {
+        toast.classList.add("show");
+      });
+      
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        toast.classList.add("fade-out");
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 500);
+      }, 3000);
+      
+      // Also remove if user navigates away
+      const observer = new MutationObserver(() => {
+        if (!toast.parentNode) {
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+      return toast;
     }
 
-    // Generic toast helper (separate from autosave)
+    function showAutosaveToast() {
+      createToast("Game autosaved!", "autosave");
+    }
+
+    function showManualSaveToast() {
+      createToast("Game manually saved!", "manual-save");
+    }
+
+    // Generic toast helper
     function showToast(message) {
-      const el = document.getElementById("gameToast");
-      if (!el) return;
-      el.textContent = message;
-      el.classList.add("show");
-      setTimeout(() => { el.classList.remove("show"); }, 3000);
+      createToast(message, "info");
     }
 
     // Smoothly update hunt cooldown visual and disabled state
@@ -1286,7 +1375,7 @@
       save();
       lastSaveTime = Date.now();
       updateLastSaved();
-      showAutosavePopup();
+      showAutosaveToast();
     }
 
     // Autosave toggle button functionality
@@ -1317,9 +1406,11 @@
         save();
         lastSaveTime = Date.now();
         updateLastSaved();
-        showAutosavePopup();
+        showManualSaveToast();
       });
     }
+
+
 
     // Reset Save button functionality with 3-press failsafe
     const resetBtn = document.getElementById("resetBtn");
