@@ -35,7 +35,7 @@ jobs:
           fi
           
           # Verify the deployment directory has content
-          if [ ! "$(ls -A dist)" ]; then
+          if [ -z "$(ls -A dist)" ]; then
             echo "✗ Deployment directory is empty - deployment would fail"
             exit 1
           fi
