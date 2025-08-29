@@ -143,18 +143,6 @@
         display: none !important;
       }
 
-      .visible {
-        display: block !important;
-      }
-
-      .inline-visible {
-        display: inline !important;
-      }
-
-      .flex-visible {
-        display: flex !important;
-      }
-
       /* Margin utility classes */
       .margin-top-sm {
         margin-top: var(--spacing-sm) !important;
@@ -761,17 +749,17 @@
             <div class="row">
               <button id="contractClickBtn" class="btn cooldownable action-btn hidden" data-btn-type="action" data-cooldown-type="action">Advance contract</button>
             </div>
-                          <div class="row hidden">
-                <span>Ticks:</span>
-                <strong class="num" id="ticks">0</strong>
-              </div>
-              <div class="row hidden">
-                <span>Unbanked:</span>
-                <strong class="num" id="unbanked">0.0</strong>
-              </div>
+            <div class="row hidden">
+              <span>Ticks:</span>
+              <strong class="num" id="ticks">0</strong>
+            </div>
+            <div class="row hidden">
+              <span>Unbanked:</span>
+              <strong class="num" id="unbanked">0.0</strong>
+            </div>
             
             <!-- Contracts section -->
-                          <div id="contractsBox" class="contracts-section hidden">
+            <div id="contractsBox" class="contracts-section hidden">
               <h3 class="contracts-title">Contracts</h3>
               <div id="contractsHint" class="contracts-hint">
                 New contracts will appear here!<br>
@@ -1021,11 +1009,9 @@
               if (hireRow) {
           if (novice.revealed || state.credits >= getCrewCost(novice)) {
             hireRow.classList.remove("hidden");
-            hireRow.classList.add("visible");
             novice.revealed = true;
           } else {
             hireRow.classList.add("hidden");
-            hireRow.classList.remove("visible");
           }
         }
       // Grey out Hire button when unaffordable or on cooldown
@@ -1057,11 +1043,9 @@
               if (snitchHireRow) {
           if (snitch.revealed || state.credits >= getCrewCost(snitch)) {
             snitchHireRow.classList.remove("hidden");
-            snitchHireRow.classList.add("visible");
             snitch.revealed = true;
           } else {
             snitchHireRow.classList.add("hidden");
-            snitchHireRow.classList.remove("visible");
           }
         }
       // Grey out Snitch Hire button when unaffordable or on cooldown
@@ -1082,10 +1066,8 @@
       if (contractClickBtn) {
         if (state.contractActive) {
           contractClickBtn.classList.remove("hidden");
-          contractClickBtn.classList.add("visible");
         } else {
           contractClickBtn.classList.add("hidden");
-          contractClickBtn.classList.remove("visible");
         }
       }
 
@@ -1147,7 +1129,6 @@
 
         if (state.flags.contractsUnlocked) {
           contractsBox.classList.remove("hidden");
-          contractsBox.classList.add("visible");
           // Hide hint permanently once first contract is taken
           const contractsHint = document.getElementById("contractsHint");
           if (contractsHint) {
@@ -1172,7 +1153,6 @@
           }
         } else {
           contractsBox.classList.add("hidden");
-          contractsBox.classList.remove("visible");
         }
       }
     }
