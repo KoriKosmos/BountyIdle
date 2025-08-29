@@ -1241,19 +1241,20 @@
         
         // Calculate collective click interval (halving time with each snitch)
         const clickInterval = getSnitchClickInterval(snitch);
+        // Use fractional tracking to properly handle fractional intervals
         state.snitchClickTracking.lastClick += 1;
         
         if (state.snitchClickTracking.lastClick >= clickInterval) {
           // Time to autoclick!
-          state.snitchClickTracking.lastClick = 0;
+          // Keep the remainder to maintain precise timing
+          state.snitchClickTracking.lastClick = state.snitchClickTracking.lastClick - clickInterval;
           
           // Perform the autoclick action (respecting cooldowns)
           if (snitch.autoclickType === "action" && canClick('action')) {
-            // Add credits from autoclick
-            state.credits += getClickValue();
             startCooldown('action');
             
-            // If contract is active, also contribute to contract progress
+            // During contracts, Snitch contributes to contract progress instead of credits
+            // This maintains consistency with other game mechanics
             if (state.contractActive) {
               const contract = contracts[state.currentContract];
               state.contractProgress += getClickValue();
@@ -1264,6 +1265,9 @@
                 state.contractProgress = 0;
                 showToast(`Contract completed! +${contract.reward} credits`);
               }
+            } else {
+              // Only add credits when not in a contract
+              state.credits += getClickValue();
             }
           }
         }
