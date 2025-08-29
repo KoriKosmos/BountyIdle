@@ -9,6 +9,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
+      - name: List workspace contents
+        run: |
+          echo "=== GitHub workspace contents ==="
+          ls -la $GITHUB_WORKSPACE
+          echo "=== File count in workspace ==="
+          find $GITHUB_WORKSPACE -type f -not -path "$GITHUB_WORKSPACE/.git/*" -not -path "$GITHUB_WORKSPACE/.github/*" | wc -l
+        
+      - name: Prepare deployment files
+        run: |
+          # Enable error handling - exit on any command failure
+          set -e
+          
+          # Create a clean deployment directory
+          mkdir -p dist
+          
+          # Use rsync to copy all files except .git and .github directories
+          # rsync is more robust and handles exclusions better than cp
+          echo "Copying files to deployment directory..."
+          if rsync -av --exclude='.git' --exclude='.github' --exclude='dist' ./ dist/; then
+            echo "✓ File copy completed successfully"
+          else
+            echo "✗ File copy failed with exit code $?"
+            exit 1
+          fi
+          
+          # Verify the deployment directory has content
+          if [ -z "$(ls -A dist)" ]; then
+            echo "✗ Deployment directory is empty - deployment would fail"
+            exit 1
+          fi
+          
+          echo "=== Deployment directory contents ==="
+          ls -la dist/
+          echo "=== Files to be deployed ==="
+          find dist/ -type f | sort
+          echo "=== Total deployment file count ==="
+          find dist/ -type f | wc -l
+        
       - name: deploy2nekoweb
         uses: indiefellas/deploy2nekoweb@main
         with:
@@ -16,4 +54,4 @@ jobs:
           nekoweb-cookie: ${{ secrets.NEKOWEB_COOKIE }}
           nekoweb-domain: 'bountyidle.nekoweb.org'
           nekoweb-username: 'bountyidle'
-          directory: '.'
+          directory: 'dist'
