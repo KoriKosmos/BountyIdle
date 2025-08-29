@@ -347,6 +347,122 @@
         color: var(--text-accent);
       }
 
+      /* Crew section styles */
+      .crew-section {
+        margin-bottom: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .crew-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-color), var(--text-accent));
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .crew-section:hover::before {
+        opacity: 1;
+      }
+
+      .crew-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .crew-section:hover {
+        background: var(--bg-secondary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+      }
+
+      .crew-header {
+        margin-bottom: var(--spacing-md);
+      }
+
+      .crew-name {
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        margin: 0 0 var(--spacing-sm) 0;
+        color: var(--text-primary);
+      }
+
+      .crew-stats {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm) 0;
+      }
+
+      .crew-income {
+        color: var(--text-accent);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+      }
+
+      .crew-description {
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        font-style: italic;
+      }
+
+      .crew-count {
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+      }
+
+      .crew-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .crew-btn {
+        width: 100%;
+        justify-content: center;
+        font-weight: 600;
+        padding: var(--spacing-md) var(--spacing-lg);
+        min-height: 48px;
+        border-width: 2px;
+        transition: all 0.2s ease;
+      }
+
+      .crew-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .crew-cost {
+        text-align: center;
+        padding: var(--spacing-xs) 0;
+      }
+
+      /* Responsive improvements for crew sections */
+      @media (max-width: 768px) {
+        .crew-section {
+          padding: var(--spacing-sm);
+          margin-bottom: var(--spacing-md);
+        }
+        
+        .crew-name {
+          font-size: var(--font-size-base);
+        }
+        
+        .crew-btn {
+          padding: var(--spacing-sm) var(--spacing-md);
+          min-height: 44px;
+        }
+      }
+
       /* Upgrade rows */
       .upgrade-row {
         margin-bottom: var(--spacing-md);
@@ -897,26 +1013,45 @@
             <div class="card-header">
               <h2 class="card-title">Crew</h2>
             </div>
-            <div id="hireRow" class="hidden">
-              <div class="row">
-                <button id="hireBtn" class="btn cooldownable" data-cooldown-type="hire">Hire Novice Hunter</button>
+            
+            <!-- Novice Hunter Section -->
+            <div id="hireRow" class="crew-section hidden">
+              <div class="crew-header">
+                <h3 class="crew-name">Novice Hunter</h3>
+                <div class="crew-stats">
+                  <span class="crew-income">+0.5 credits/tick</span>
+                  <span class="crew-count">Hired: 0</span>
+                </div>
               </div>
-              <div class="row">
-                <span id="hireCostSpan" class="text-secondary">Cost: 20</span>
+              
+              <div class="crew-actions">
+                <button id="hireBtn" class="btn cooldownable crew-btn" data-cooldown-type="hire">
+                  Hire Novice Hunter
+                </button>
+                <div class="crew-cost">
+                  <span id="hireCostSpan" class="text-secondary">Cost: 20</span>
+                </div>
               </div>
-              <div id="hirePerTick" class="text-accent">+0.5 credits/tick</div>
-              <div id="hireCostBelow" class="text-secondary">Hired: 0</div>
             </div>
             
-            <div id="snitchHireRow" class="hidden">
-              <div class="row">
-                <button id="snitchHireBtn" class="btn cooldownable" data-cooldown-type="hire">Hire Snitch (autoclicker)</button>
+            <!-- Snitch Section -->
+            <div id="snitchHireRow" class="crew-section hidden">
+              <div class="crew-header">
+                <h3 class="crew-name">Snitch (Autoclicker)</h3>
+                <div class="crew-stats">
+                  <span class="crew-description">Automatically clicks for you</span>
+                  <span class="crew-count">Hired: 0</span>
+                </div>
               </div>
-              <div class="row">
-                <span id="snitchHireCostSpan" class="text-secondary"></span>
+              
+              <div class="crew-actions">
+                <button id="snitchHireBtn" class="btn cooldownable crew-btn" data-cooldown-type="hire">
+                  Hire Snitch
+                </button>
+                <div class="crew-cost">
+                  <span id="snitchHireCostSpan" class="text-secondary"></span>
+                </div>
               </div>
-              <div id="snitchPerTick" class="text-accent"></div>
-              <div id="snitchHireCostBelow" class="text-secondary">Hired: 0</div>
             </div>
           </div>
         </aside>
@@ -1266,20 +1401,24 @@
       // Novice Hunter UI
       const novice = crewTypes[0];
       const hireCostSpan = document.getElementById("hireCostSpan");
-      const hireCostBelow = document.getElementById("hireCostBelow");
       if (hireCostSpan) {
         hireCostSpan.textContent = `Cost: ${getCrewCost(novice)}`;
       }
-      if (hireCostBelow) {
-        hireCostBelow.textContent = `Hired: ${novice.count}`;
+      
+      // Update crew count display
+      const noviceCountElement = document.querySelector("#hireRow .crew-count");
+      if (noviceCountElement) {
+        noviceCountElement.textContent = `Hired: ${novice.count}`;
       }
-      const hirePerTick = document.getElementById("hirePerTick");
-      if (hirePerTick) {
+      
+      // Update crew income display
+      const noviceIncomeElement = document.querySelector("#hireRow .crew-income");
+      if (noviceIncomeElement) {
         if (novice.count === 0) {
-          hirePerTick.innerHTML = `<span class="text-accent">+${novice.perTick}</span> credits/tick`;
+          noviceIncomeElement.textContent = `+${novice.perTick} credits/tick`;
         } else {
           const totalPerTick = (novice.count * novice.perTick).toFixed(1);
-          hirePerTick.innerHTML = `<span class="text-accent">+${totalPerTick}</span> credits/tick`;
+          noviceIncomeElement.textContent = `+${totalPerTick} credits/tick`;
         }
       }
       const hireRow = document.getElementById("hireRow");
@@ -1303,18 +1442,22 @@
       // Snitch UI
       const snitch = crewTypes[1];
       const snitchHireCostSpan = document.getElementById("snitchHireCostSpan");
-      const snitchHireCostBelow = document.getElementById("snitchHireCostBelow");
       if (snitchHireCostSpan) {
         snitchHireCostSpan.textContent = `Cost: ${getCrewCost(snitch)}`;
       }
-      if (snitchHireCostBelow) {
-        snitchHireCostBelow.textContent = `Hired: ${snitch.count}`;
+      
+      // Update crew count display
+      const snitchCountElement = document.querySelector("#snitchHireRow .crew-count");
+      if (snitchCountElement) {
+        snitchCountElement.textContent = `Hired: ${snitch.count}`;
       }
-      const snitchPerTick = document.getElementById("snitchPerTick");
-      if (snitchPerTick) {
+      
+      // Update crew description display
+      const snitchDescriptionElement = document.querySelector("#snitchHireRow .crew-description");
+      if (snitchDescriptionElement) {
         const interval = getSnitchIntervalTicks(snitch);
         const tickText = getTickText(interval);
-        snitchPerTick.innerHTML = `<span class="text-accent">Autoclicks every ${interval.toFixed(1)} ${tickText}</span>`;
+        snitchDescriptionElement.textContent = `Autoclicks every ${interval.toFixed(1)} ${tickText}`;
       }
 
       const snitchHireRow = document.getElementById("snitchHireRow");
