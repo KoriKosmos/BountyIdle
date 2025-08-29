@@ -808,7 +808,6 @@
         id: "doubleClick",
         name: "Double Click Power",
         baseCost: 20,
-        revealAt: 10,
         scaling: 2.5,
         description: "Multiplies click power by 2",
       },
@@ -820,6 +819,8 @@
       credits: 0,
       ticks: 0,
       unbanked: 0,
+      // Tracks which upgrades have been revealed at least once
+      revealedUpgrades: {},
       // Shared button type multipliers
       buttonTypes: {
         // Action-type buttons: hunt, advance contract, etc.
@@ -982,9 +983,15 @@
             isMaxed = count >= REDUCE_CD_MAX_COUNT;
           }
           const count = (state.upgrades && state.upgrades[up.id]) || 0;
-          const revealThreshold = up.revealAt !== undefined ? up.revealAt : up.baseCost;
-          const shouldShow = count > 0 || state.credits >= revealThreshold;
+          const alreadyRevealed = !!(state.revealedUpgrades && state.revealedUpgrades[up.id]);
+          const shouldShow = alreadyRevealed || count > 0 || state.credits >= up.baseCost;
           if (!shouldShow) continue;
+          // Mark as revealed permanently once shown the first time
+          if (!alreadyRevealed) {
+            if (!state.revealedUpgrades) state.revealedUpgrades = {};
+            state.revealedUpgrades[up.id] = true;
+            try { save(); } catch {}
+          }
           const maxedClass = isMaxed ? "maxed" : "";
           const mobileClass = window.innerWidth <= 768 ? "upgrade-row-mobile" : "";
           html += `<div class="upgrade-row ${maxedClass} ${mobileClass}">
@@ -1103,6 +1110,9 @@
       if (state.credits < cost) return;
       state.credits -= cost;
       state.upgrades[up.id] = (state.upgrades[up.id] || 0) + 1;
+      // Ensure revealed flag persists once purchased
+      if (!state.revealedUpgrades) state.revealedUpgrades = {};
+      state.revealedUpgrades[up.id] = true;
       // Apply upgrade effect
       applyUpgradeEffect(up.id);
       try { save(); } catch {}
@@ -1208,6 +1218,10 @@
         }
         // Ensure upgrades is an object map
         if (!state.upgrades || typeof state.upgrades !== 'object') state.upgrades = {};
+        // Ensure revealedUpgrades map exists
+        if (!state.revealedUpgrades || typeof state.revealedUpgrades !== 'object') {
+          state.revealedUpgrades = {};
+        }
         // Ensure buttonTypes exists
         if (!state.buttonTypes || typeof state.buttonTypes !== 'object') {
           state.buttonTypes = { action: { base: 1, multiplier: 1 } };
