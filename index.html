@@ -20,6 +20,7 @@
         --text-secondary: #aaa;
         --text-accent: #9aa;
         --accent-color: #ffb300;
+        --accent-hover: #e6a200;
         --danger-color: #ff2d2d;
         --success-color: #4caf50;
         --button-bg: #1b1b25;
@@ -678,6 +679,198 @@
         .card {
           border: 1px solid #000;
           box-shadow: none;
+        }
+      }
+
+      /* Dev Menu Styles */
+      .dev-menu {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-secondary);
+        border: 2px solid var(--accent-color);
+        border-radius: var(--border-radius);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        min-width: 400px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        transition: all 0.3s ease;
+      }
+
+      .dev-menu.hidden {
+        opacity: 0;
+        visibility: hidden;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+
+      .dev-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      .dev-menu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-lg);
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+      }
+
+      .dev-menu-header h3 {
+        margin: 0;
+        color: var(--accent-color);
+        font-size: var(--font-size-xl);
+      }
+
+      .dev-close-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: var(--font-size-2xl);
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--border-radius-sm);
+        transition: all 0.2s ease;
+      }
+
+      .dev-close-btn:hover {
+        background: var(--button-hover);
+        color: var(--text-primary);
+      }
+
+      .dev-menu-content {
+        padding: var(--spacing-lg);
+      }
+
+      .dev-section {
+        margin-bottom: var(--spacing-xl);
+        padding: var(--spacing-md);
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+      }
+
+      .dev-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .dev-section h4 {
+        margin: 0 0 var(--spacing-md) 0;
+        color: var(--text-primary);
+        font-size: var(--font-size-lg);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: var(--spacing-sm);
+      }
+
+      .dev-input-group {
+        display: flex;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        flex-wrap: wrap;
+      }
+
+      .dev-input-group input,
+      .dev-input-group select {
+        flex: 1;
+        min-width: 120px;
+        padding: var(--spacing-sm);
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        color: var(--text-primary);
+        font-size: var(--font-size-sm);
+      }
+
+      .dev-input-group input:focus,
+      .dev-input-group select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+      }
+
+      .dev-input-group button {
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: var(--accent-color);
+        border: none;
+        border-radius: var(--border-radius-sm);
+        color: #000;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: var(--font-size-sm);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .dev-input-group button:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
+
+      .dev-button-group {
+        display: flex;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
+      }
+
+      .dev-button-group button {
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: var(--button-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: var(--font-size-sm);
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        flex: 1;
+        min-width: 80px;
+      }
+
+      .dev-button-group button:hover {
+        background: var(--button-hover);
+        transform: translateY(-1px);
+      }
+
+      .dev-button-group button:active {
+        transform: translateY(0);
+      }
+
+      /* Mobile responsive dev menu */
+      @media (max-width: 768px) {
+        .dev-menu {
+          min-width: 90vw;
+          max-width: 95vw;
+          margin: var(--spacing-md);
+        }
+
+        .dev-input-group {
+          flex-direction: column;
+        }
+
+        .dev-input-group input,
+        .dev-input-group select,
+        .dev-input-group button {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .dev-button-group {
+          flex-direction: column;
+        }
+
+        .dev-button-group button {
+          width: 100%;
+          min-width: 0;
         }
       }
     </style>
@@ -1643,6 +1836,323 @@
           row.classList.remove('upgrade-row-mobile');
         }
       });
+    });
+
+    // Dev Menu System
+    let devMenuOpen = false;
+    let devMenuElement = null;
+    let devMenuKeySequence = '';
+    const DEV_MENU_TRIGGER = 'kori';
+
+    // Create dev menu element
+    function createDevMenu() {
+      if (devMenuElement) return devMenuElement;
+
+      const menu = document.createElement('div');
+      menu.id = 'devMenu';
+      menu.className = 'dev-menu hidden';
+      menu.innerHTML = `
+        <div class="dev-menu-header">
+          <h3>Dev Menu</h3>
+          <button class="dev-close-btn" onclick="closeDevMenu()">×</button>
+        </div>
+        <div class="dev-menu-content">
+          <div class="dev-section">
+            <h4>Credits</h4>
+            <div class="dev-input-group">
+              <input type="number" id="devCreditsInput" placeholder="Enter credits" min="0">
+              <button onclick="setCredits()">Set Credits</button>
+            </div>
+            <div class="dev-button-group">
+              <button onclick="addCredits(1000)">+1000</button>
+              <button onclick="addCredits(10000)">+10k</button>
+              <button onclick="addCredits(100000)">+100k</button>
+            </div>
+          </div>
+          
+          <div class="dev-section">
+            <h4>Crew</h4>
+            <div class="dev-input-group">
+              <select id="devCrewSelect">
+                <option value="novice">Novice Hunter</option>
+                <option value="snitch">Snitch</option>
+              </select>
+              <input type="number" id="devCrewCount" placeholder="Count" min="0">
+              <button onclick="setCrew()">Set Count</button>
+            </div>
+            <div class="dev-button-group">
+              <button onclick="addCrew(1)">+1</button>
+              <button onclick="addCrew(10)">+10</button>
+              <button onclick="addCrew(100)">+100</button>
+            </div>
+          </div>
+          
+          <div class="dev-section">
+            <h4>Upgrades</h4>
+            <div class="dev-input-group">
+              <select id="devUpgradeSelect">
+                <option value="reduceCooldown">Reduce Cooldown</option>
+                <option value="doubleClick">Double Click Power</option>
+              </select>
+              <input type="number" id="devUpgradeCount" placeholder="Count" min="0">
+              <button onclick="setUpgrade()">Set Count</button>
+            </div>
+            <div class="dev-button-group">
+              <button onclick="addUpgrade(1)">+1</button>
+              <button onclick="addUpgrade(5)">+5</button>
+              <button onclick="addUpgrade(20)">+20</button>
+            </div>
+          </div>
+          
+          <div class="dev-section">
+            <h4>Game State</h4>
+            <div class="dev-button-group">
+              <button onclick="unlockContracts()">Unlock Contracts</button>
+              <button onclick="completeContractDev()">Complete Current Contract</button>
+              <button onclick="resetCooldowns()">Reset Cooldowns</button>
+              <button onclick="toggleDevMode()">Toggle Dev Mode</button>
+            </div>
+          </div>
+          
+          <div class="dev-section">
+            <h4>Quick Actions</h4>
+            <div class="dev-button-group">
+              <button onclick="maxEverything()">Max Everything</button>
+              <button onclick="resetGame()">Reset Game</button>
+              <button onclick="exportSave()">Export Save</button>
+              <button onclick="importSave()">Import Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+      devMenuElement = menu;
+      return menu;
+    }
+
+    // Dev menu functions
+    function openDevMenu() {
+      if (!devMenuElement) {
+        createDevMenu();
+      }
+      devMenuElement.classList.remove('hidden');
+      devMenuElement.classList.add('show');
+      devMenuOpen = true;
+    }
+
+    function closeDevMenu() {
+      if (devMenuElement) {
+        devMenuElement.classList.remove('show');
+        devMenuElement.classList.add('hidden');
+        devMenuOpen = false;
+      }
+    }
+
+    function setCredits() {
+      const input = document.getElementById('devCreditsInput');
+      const value = parseInt(input.value);
+      if (!isNaN(value) && value >= 0) {
+        state.credits = value;
+        input.value = '';
+        updateUI();
+        showToast(`Credits set to ${value}`);
+      }
+    }
+
+    function addCredits(amount) {
+      state.credits += amount;
+      updateUI();
+      showToast(`Added ${amount} credits`);
+    }
+
+    function setCrew() {
+      const crewType = document.getElementById('devCrewSelect').value;
+      const count = parseInt(document.getElementById('devCrewCount').value);
+      if (!isNaN(count) && count >= 0) {
+        const crew = crewTypes.find(c => c.id === crewType);
+        if (crew) {
+          crew.count = count;
+          document.getElementById('devCrewCount').value = '';
+          updateUI();
+          showToast(`${crew.name} count set to ${count}`);
+        }
+      }
+    }
+
+    function addCrew(amount) {
+      const crewType = document.getElementById('devCrewSelect').value;
+      const crew = crewTypes.find(c => c.id === crewType);
+      if (crew) {
+        crew.count += amount;
+        updateUI();
+        showToast(`Added ${amount} ${crew.name}`);
+      }
+    }
+
+    function setUpgrade() {
+      const upgradeType = document.getElementById('devUpgradeSelect').value;
+      const count = parseInt(document.getElementById('devUpgradeCount').value);
+      if (!isNaN(count) && count >= 0) {
+        if (!state.upgrades) state.upgrades = {};
+        state.upgrades[upgradeType] = count;
+        document.getElementById('devUpgradeCount').value = '';
+        applyUpgradeEffect(upgradeType);
+        updateUI();
+        showToast(`${upgradeType} count set to ${count}`);
+      }
+    }
+
+    function addUpgrade(amount) {
+      const upgradeType = document.getElementById('devUpgradeSelect').value;
+      if (!state.upgrades) state.upgrades = {};
+      state.upgrades[upgradeType] = (state.upgrades[upgradeType] || 0) + amount;
+      applyUpgradeEffect(upgradeType);
+      updateUI();
+      showToast(`Added ${amount} ${upgradeType}`);
+    }
+
+    function unlockContracts() {
+      state.flags.contractsUnlocked = true;
+      updateUI();
+      showToast('Contracts unlocked!');
+    }
+
+    function completeContractDev() {
+      if (state.contractActive) {
+        const contract = contracts[state.currentContract];
+        // Call the existing completeContract function with the contract parameter
+        // This is the function that actually handles contract completion logic
+        completeContract(contract);
+        updateUI();
+        showToast('Contract completed!');
+      } else {
+        showToast('No active contract');
+      }
+    }
+
+    function resetCooldowns() {
+      const now = Date.now();
+      for (const key of Object.keys(state.cooldowns)) {
+        const cd = state.cooldowns[key];
+        if (cd) {
+          cd.readyAt = now;
+        }
+      }
+      updateCooldownVisual();
+      showToast('All cooldowns reset');
+    }
+
+    function toggleDevMode() {
+      // This could be used to enable additional dev features
+      showToast('Dev mode toggled');
+    }
+
+    function maxEverything() {
+      // Max out all crew and upgrades
+      crewTypes.forEach(crew => {
+        crew.count = 999;
+      });
+      
+      if (!state.upgrades) state.upgrades = {};
+      upgradeTypes.forEach(upgrade => {
+        state.upgrades[upgrade.id] = 999;
+      });
+      
+      state.credits = 999999999;
+      state.flags.contractsUnlocked = true;
+      
+      applyUpgradeEffect('reduceCooldown');
+      applyUpgradeEffect('doubleClick');
+      updateUI();
+      showToast('Everything maxed out!');
+    }
+
+    function resetGame() {
+      if (confirm('Are you sure you want to reset the game? This cannot be undone!')) {
+        suppressSaves = true;
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+      }
+    }
+
+    function exportSave() {
+      const saveData = { state, crewTypes };
+      const dataStr = JSON.stringify(saveData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'bounty-save.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast('Save exported!');
+    }
+
+    function importSave() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const saveData = JSON.parse(e.target.result);
+              if (saveData.state && saveData.crewTypes) {
+                Object.assign(state, saveData.state);
+                if (Array.isArray(saveData.crewTypes)) {
+                  for (let i = 0; i < crewTypes.length; ++i) {
+                    Object.assign(crewTypes[i], saveData.crewTypes[i]);
+                  }
+                }
+                updateUI();
+                applyUpgradeEffect('reduceCooldown');
+                applyUpgradeEffect('doubleClick');
+                showToast('Save imported successfully!');
+              } else {
+                showToast('Invalid save file');
+              }
+            } catch (error) {
+              showToast('Error importing save file');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      input.click();
+    }
+
+    // Keyboard listener for dev menu trigger
+    document.addEventListener('keydown', (e) => {
+      // Only listen for printable characters
+      if (e.key.length === 1) {
+        devMenuKeySequence += e.key.toLowerCase();
+        
+        // Keep only the last N characters to match trigger length
+        if (devMenuKeySequence.length > DEV_MENU_TRIGGER.length) {
+          devMenuKeySequence = devMenuKeySequence.slice(-DEV_MENU_TRIGGER.length);
+        }
+        
+        // Check if trigger sequence is complete
+        if (devMenuKeySequence === DEV_MENU_TRIGGER) {
+          openDevMenu();
+          devMenuKeySequence = '';
+        }
+      }
+      
+      // Escape key closes dev menu
+      if (e.key === 'Escape' && devMenuOpen) {
+        closeDevMenu();
+      }
+    });
+
+    // Close dev menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (devMenuOpen && devMenuElement && !devMenuElement.contains(e.target)) {
+        closeDevMenu();
+      }
     });
   </script>
   </body>
