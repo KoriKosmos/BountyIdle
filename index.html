@@ -1384,6 +1384,7 @@
       state.contractActive = false;
       state.contractProgress = 0;
       showToast(`Contract completed! +${contract.reward} credits`);
+      updateUI();
     }
 
     // Reusable function to check and complete contracts if goal is reached

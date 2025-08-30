@@ -27,6 +27,7 @@ Bounty Idle is a browser-based incremental game that combines strategic resource
 - **Cooldown System**: Strategic timing for optimal gameplay
 - **Passive Income**: Crew members generate credits automatically
 - **Contract Progress**: Long-term goals with substantial rewards
+- **Contextual Contract Actions**: The "Advance contract" button only appears during active contracts and hides afterward
 - **Auto-save**: Automatic game saving every 30 seconds
 - **Mobile Responsive**: Optimized for both desktop and mobile devices
 
