@@ -1395,9 +1395,13 @@
       return false;
     }
 
-    function updateUI() {
+    // Fast update that runs every tick (only essential info)
+    function updateUITick() {
       $("credits").textContent = fmt0(state.credits);
+    }
 
+    // Full update that runs when needed (button states, costs, etc.)
+    function updateUI() {
       // Novice Hunter UI
       const novice = crewTypes[0];
       const hireCostSpan = document.getElementById("hireCostSpan");
@@ -1422,14 +1426,14 @@
         }
       }
       const hireRow = document.getElementById("hireRow");
-              if (hireRow) {
-          if (novice.revealed || state.credits >= getCrewCost(novice)) {
-            hireRow.classList.remove("hidden");
-            novice.revealed = true;
-          } else {
-            hireRow.classList.add("hidden");
-          }
+      if (hireRow) {
+        if (novice.revealed || state.credits >= getCrewCost(novice)) {
+          hireRow.classList.remove("hidden");
+          novice.revealed = true;
+        } else {
+          hireRow.classList.add("hidden");
         }
+      }
       // Grey out Hire button when unaffordable or on cooldown
       const hireButton = document.getElementById('hireBtn');
       if (hireButton) {
@@ -1722,7 +1726,7 @@
         }
       }
 
-      updateUI();
+      updateUITick();
       // Update contract progress UI if active
       if (state.contractActive) {
         const progressNum = document.getElementById('contractProgressNum');
