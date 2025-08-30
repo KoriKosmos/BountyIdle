@@ -1818,6 +1818,11 @@
           state.buttonTypes.action.multiplier = state.clickMultiplier;
           delete state.clickMultiplier;
         }
+        // Migration: ensure contract state is consistent
+        if (state.contractActive && state.contractProgress >= contracts[state.currentContract].goal) {
+          state.contractActive = false;
+          state.contractProgress = 0;
+        }
         // Ensure cooldown matches flat reductions from upgrades
         updateCooldownFromUpgrades();
         // Ensure click power multiplier reflects upgrades
