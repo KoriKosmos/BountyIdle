@@ -141,7 +141,7 @@
 
       /* Utility classes for display states */
       .hidden {
-        display: none;
+        display: none !important;
       }
 
       /* Margin utility classes */
@@ -1544,13 +1544,10 @@
       }
       const contractClickBtn = document.getElementById("contractClickBtn");
       if (contractClickBtn) {
-        console.log("UpdateUI: contractActive =", state.contractActive, "button has hidden class:", contractClickBtn.classList.contains("hidden"));
         if (state.contractActive) {
           contractClickBtn.classList.remove("hidden");
-          console.log("Showing contract button");
         } else {
           contractClickBtn.classList.add("hidden");
-          console.log("Hiding contract button");
         }
       }
 
