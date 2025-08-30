@@ -1544,10 +1544,13 @@
       }
       const contractClickBtn = document.getElementById("contractClickBtn");
       if (contractClickBtn) {
+        console.log("UpdateUI: contractActive =", state.contractActive, "button has hidden class:", contractClickBtn.classList.contains("hidden"));
         if (state.contractActive) {
           contractClickBtn.classList.remove("hidden");
+          console.log("Showing contract button");
         } else {
           contractClickBtn.classList.add("hidden");
+          console.log("Hiding contract button");
         }
       }
 
@@ -1835,6 +1838,7 @@
 
     // Load once, then autosave every 30s
     load();
+    console.log("Initial state after load:", { contractActive: state.contractActive, contractsUnlocked: state.flags.contractsUnlocked });
     updateUI();
     updateSnitchAutoclicker();
     // Ensure cooldown reflects saved/initial state
