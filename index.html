@@ -1463,14 +1463,19 @@
       const snitchHireRow = document.getElementById("snitchHireRow");
       if (snitchHireRow) {
         // Only reveal snitch when reduce cooldown upgrade is maxed out
-        const reduceCooldownCount = state.upgrades?.reduceCooldown || 0;
+        const reduceCooldownCount = (state.upgrades && state.upgrades.reduceCooldown) || 0;
         const isReduceCooldownMaxed = reduceCooldownCount >= REDUCE_CD_MAX_COUNT;
         
-        if (snitch.revealed || (isReduceCooldownMaxed && state.credits >= getCrewCost(snitch))) {
+        // Check if snitch should be revealed based on upgrade condition
+        if (isReduceCooldownMaxed && state.credits >= getCrewCost(snitch)) {
           snitchHireRow.classList.remove("hidden");
           snitch.revealed = true;
         } else {
           snitchHireRow.classList.add("hidden");
+          // Reset revealed state if upgrade condition is no longer met
+          if (!isReduceCooldownMaxed) {
+            snitch.revealed = false;
+          }
         }
       }
       // Grey out Snitch Hire button when unaffordable or on cooldown
