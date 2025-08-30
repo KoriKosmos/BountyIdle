@@ -1469,14 +1469,8 @@
           snitchHireRow.classList.add("hidden");
         }
       }
-      // Grey out Snitch Hire button when unaffordable or on cooldown
-      const snitchHireButton = document.getElementById('snitchHireBtn');
-      if (snitchHireButton) {
-        const cd = state.cooldowns && state.cooldowns.hire;
-        const ready = !cd || (cd.ms === 0) || Date.now() >= (cd.readyAt || 0);
-        const canAfford = state.credits >= getCrewCost(snitch);
-        snitchHireButton.disabled = !(ready && canAfford);
-      }
+      // Snitch Hire button disabled state is now handled in updateCooldownVisual()
+      // for continuous monitoring of both cooldown and affordability
       // Update click info text and toggle contract click button
       const clickInfo = document.getElementById("clickInfo");
       if (clickInfo) {
@@ -1944,8 +1938,25 @@
           const canAfford = state.credits >= getCrewCost(novice);
           if (!canAfford) b.disabled = true;
         }
+        // Handle Snitch hire button disabled state (cooldown + affordability)
+        // This ensures the button state is continuously monitored for smooth transitions
+        if (b.id === 'snitchHireBtn') {
+          const snitch = crewTypes[1];
+          const canAfford = state.credits >= getCrewCost(snitch);
+          const snitchReady = total === 0 || now >= readyAt;
+          b.disabled = !(snitchReady && canAfford);
+        }
       }
-      if (anyCooling) requestAnimationFrame(updateCooldownVisual);
+      // Continue monitoring for state changes, especially for Snitch hire button
+      // which needs continuous updates for both cooldown and affordability
+      // Use a small delay to prevent excessive calls while ensuring responsiveness
+      if (anyCooling) {
+        requestAnimationFrame(updateCooldownVisual);
+      } else {
+        // Even when no cooldowns are active, continue monitoring for a short time
+        // to catch state transitions smoothly
+        setTimeout(() => requestAnimationFrame(updateCooldownVisual), 50);
+      }
     }
 
     let autosaveEnabled = true;
