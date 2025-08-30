@@ -1400,6 +1400,102 @@
       $("credits").textContent = fmt0(state.credits);
     }
 
+    // Track if upgrades UI has been initialized
+    let upgradesUIInitialized = false;
+
+    // Initialize and update upgrades UI efficiently
+    function updateUpgradesUI() {
+      const upgradeArea = document.getElementById("upgradeArea");
+      if (!upgradeArea) return;
+
+      // Initial render - only happens once
+      if (!upgradesUIInitialized) {
+        let html = "";
+        for (const up of upgradeTypes) {
+          const count = (state.upgrades && state.upgrades[up.id]) || 0;
+          const alreadyRevealed = !!(state.revealedUpgrades && state.revealedUpgrades[up.id]);
+          const shouldShow = alreadyRevealed || count > 0 || state.credits >= up.baseCost;
+          if (!shouldShow) continue;
+          
+          // Mark as revealed permanently once shown the first time
+          if (!alreadyRevealed) {
+            if (!state.revealedUpgrades) state.revealedUpgrades = {};
+            state.revealedUpgrades[up.id] = true;
+            try { save(); } catch {}
+          }
+
+          const cost = getUpgradeCost(up);
+          const disabled = state.credits < cost ? "disabled" : "";
+          let extra = "";
+          let isMaxed = false;
+          
+          if (up.id === 'reduceCooldown') {
+            const net = Math.min(100, 5 * count);
+            extra = ` <span class="text-accent">• Net: ${net}%</span>`;
+            isMaxed = count >= REDUCE_CD_MAX_COUNT;
+          }
+          
+          const maxedClass = isMaxed ? "maxed" : "";
+          const mobileClass = window.innerWidth <= 768 ? "upgrade-row-mobile" : "";
+          html += `<div class="upgrade-row ${maxedClass} ${mobileClass}" data-upgrade-id="${up.id}">
+            <div class="row">
+              <button class="btn" data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""}>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
+              <span class="text-secondary upgrade-cost">${isMaxed ? '' : `Cost: ${cost}`}</span>
+            </div>
+            <div class="upgrade-info text-secondary">${up.description}${extra}</div>
+          </div>`;
+        }
+        upgradeArea.innerHTML = html;
+        upgradesUIInitialized = true;
+        return;
+      }
+
+      // Update only what's necessary - button states and costs
+      for (const up of upgradeTypes) {
+        const upgradeRow = upgradeArea.querySelector(`[data-upgrade-id="${up.id}"]`);
+        if (!upgradeRow) continue;
+
+        const count = (state.upgrades && state.upgrades[up.id]) || 0;
+        const cost = getUpgradeCost(up);
+        const canAfford = state.credits >= cost;
+        
+        // Update button disabled state
+        const button = upgradeRow.querySelector('button');
+        if (button) {
+          button.disabled = !canAfford;
+        }
+        
+        // Update cost display
+        const costSpan = upgradeRow.querySelector('.upgrade-cost');
+        if (costSpan) {
+          costSpan.textContent = canAfford ? `Cost: ${cost}` : `Cost: ${cost}`;
+        }
+        
+        // Update reduceCooldown specific info
+        if (up.id === 'reduceCooldown') {
+          const isMaxed = count >= REDUCE_CD_MAX_COUNT;
+          const net = Math.min(100, 5 * count);
+          const extraSpan = upgradeRow.querySelector('.upgrade-info');
+          if (extraSpan) {
+            extraSpan.innerHTML = `${up.description} <span class="text-accent">• Net: ${net}%</span>`;
+          }
+          
+          // Update button text and disabled state for maxed upgrades
+          if (button) {
+            button.textContent = isMaxed ? (up.name + ' (Max)') : up.name;
+            button.disabled = isMaxed || !canAfford;
+          }
+          
+          // Update maxed class
+          if (isMaxed) {
+            upgradeRow.classList.add('maxed');
+          } else {
+            upgradeRow.classList.remove('maxed');
+          }
+        }
+      }
+    }
+
     // Full update that runs when needed (button states, costs, etc.)
     function updateUI() {
       // Novice Hunter UI
@@ -1505,49 +1601,8 @@
         }
       }
 
-      // Upgrades UI
-      const upgradeArea = document.getElementById("upgradeArea");
-      if (upgradeArea) {
-        // Render all upgrades
-        let html = "";
-        for (const up of upgradeTypes) {
-          const cost = getUpgradeCost(up);
-          const disabled = state.credits < cost ? "disabled" : "";
-          // Extra info: for reduceCooldown, show net reduction
-          let extra = "";
-          if (up.id === 'reduceCooldown') {
-            const count = (state.upgrades && state.upgrades[up.id]) || 0;
-            const net = Math.min(100, 5 * count);
-            extra = ` <span class="text-accent">• Net: ${net}%</span>`;
-          }
-          // Determine maxed state (for reduceCooldown)
-          let isMaxed = false;
-          if (up.id === 'reduceCooldown') {
-            const count = (state.upgrades && state.upgrades[up.id]) || 0;
-            isMaxed = count >= REDUCE_CD_MAX_COUNT;
-          }
-          const count = (state.upgrades && state.upgrades[up.id]) || 0;
-          const alreadyRevealed = !!(state.revealedUpgrades && state.revealedUpgrades[up.id]);
-          const shouldShow = alreadyRevealed || count > 0 || state.credits >= up.baseCost;
-          if (!shouldShow) continue;
-          // Mark as revealed permanently once shown the first time
-          if (!alreadyRevealed) {
-            if (!state.revealedUpgrades) state.revealedUpgrades = {};
-            state.revealedUpgrades[up.id] = true;
-            try { save(); } catch {}
-          }
-          const maxedClass = isMaxed ? "maxed" : "";
-          const mobileClass = window.innerWidth <= 768 ? "upgrade-row-mobile" : "";
-          html += `<div class="upgrade-row ${maxedClass} ${mobileClass}">
-            <div class="row">
-              <button class="btn" data-upgrade-id='${up.id}' ${disabled} ${isMaxed ? "disabled" : ""}>${isMaxed ? (up.name + ' (Max)') : up.name}</button>
-              <span class="text-secondary">${isMaxed ? '' : `Cost: ${cost}`}</span>
-            </div>
-            <div class="upgrade-info text-secondary">${up.description}${extra}</div>
-          </div>`;
-        }
-        upgradeArea.innerHTML = html;
-      }
+      // Upgrades UI - only render once, then update specific elements
+      updateUpgradesUI();
       // Contracts box logic (flag system, any crew type >= 10)
       const contractsBox = document.getElementById("contractsBox");
       const contractArea = document.getElementById("contractArea");
@@ -1673,6 +1728,12 @@
       // Apply upgrade effect
       applyUpgradeEffect(up.id);
       try { save(); } catch {}
+      
+      // Reset upgrades UI if this is a newly revealed upgrade
+      if (upgradesUIInitialized) {
+        upgradesUIInitialized = false;
+      }
+      
       updateUI();
       showToast(`Upgrade purchased: ${up.name}`);
     });
@@ -1682,6 +1743,15 @@
         case 'reduceCooldown': {
           // Apply flat -5% per purchase from base cooldown
           updateCooldownFromUpgrades();
+          
+          // Check if reduce cooldown is now maxed out and snitch should be revealed
+          const count = (state.upgrades && state.upgrades.reduceCooldown) || 0;
+          if (count >= REDUCE_CD_MAX_COUNT) {
+            // Reset upgrades UI to show the newly revealed snitch
+            if (upgradesUIInitialized) {
+              upgradesUIInitialized = false;
+            }
+          }
           break;
         }
         case 'doubleClick': {
