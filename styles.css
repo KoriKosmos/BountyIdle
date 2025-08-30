@@ -1,0 +1,138 @@
+/*
+  Bounty Office - Stylesheet
+  Refactored for modular files, mobile-first responsive layout
+*/
+:root {
+  /* Color palette */
+  --clr-bg-primary: #0f1115;
+  --clr-bg-secondary: #14151c;
+  --clr-border: #232333;
+  --clr-text-primary: #e9e9ee;
+  --clr-text-secondary: #aaa;
+  --clr-accent: #ffb300;
+  --clr-danger: #ff2d2d;
+
+  /* Typography */
+  --fs-sm: 0.813rem;
+  --fs-base: 0.938rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem;
+
+  /* Spacing */
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.25rem;
+  --space-5: 1.5rem;
+
+  /* Other */
+  --radius: 0.75rem;
+  --shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html,body{
+  height:100%;
+}
+body{
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  color:var(--clr-text-primary);
+  background:var(--clr-bg-primary);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+button{
+  cursor:pointer;
+  border:none;
+  border-radius:var(--radius);
+  padding:var(--space-2) var(--space-3);
+  font-weight:600;
+  font-size:var(--fs-base);
+  color:var(--clr-text-primary);
+  background:var(--clr-bg-secondary);
+  transition:background .2s ease, transform .2s ease;
+}
+button:hover{
+  background:var(--clr-border);
+  transform:translateY(-1px);
+}
+button:disabled{
+  opacity:.6;
+  cursor:default;
+  transform:none;
+}
+button.danger{
+  background:var(--clr-danger);
+}
+
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:var(--space-3);
+  max-width:70rem;
+  margin-inline:auto;
+}
+header h1{
+  font-size:var(--fs-2xl);
+}
+
+main.layout{
+  display:grid;
+  gap:var(--space-4);
+  padding:var(--space-3);
+  max-width:70rem;
+  margin-inline:auto;
+}
+@media(min-width:48rem){
+  main.layout{
+    grid-template-columns:repeat(3,1fr);
+  }
+  #action-area{
+    grid-column:span 3;
+    text-align:center;
+  }
+}
+
+section{
+  background:var(--clr-bg-secondary);
+  border:1px solid var(--clr-border);
+  border-radius:var(--radius);
+  padding:var(--space-3);
+  box-shadow:var(--shadow);
+  min-height:6rem;
+}
+section h2{
+  font-size:var(--fs-lg);
+  margin-bottom:var(--space-2);
+}
+
+/* Credit display */
+#creditsDisplay{
+  font-size:var(--fs-xl);
+  font-weight:700;
+}
+
+/* Footer controls */
+footer{
+  position:fixed;
+  bottom:var(--space-3);
+  right:var(--space-3);
+  display:flex;
+  flex-direction:column;
+  gap:var(--space-2);
+  z-index:100;
+}
+footer small{
+  color:var(--clr-text-secondary);
+  font-size:var(--fs-sm);
+  text-align:right;
+}
