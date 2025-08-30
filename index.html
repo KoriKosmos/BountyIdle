@@ -1463,7 +1463,7 @@
       const snitchHireRow = document.getElementById("snitchHireRow");
       if (snitchHireRow) {
         // Only reveal snitch when reduce cooldown upgrade is maxed out
-        const reduceCooldownCount = (state.upgrades && state.upgrades.reduceCooldown) || 0;
+        const reduceCooldownCount = state.upgrades?.reduceCooldown || 0;
         const isReduceCooldownMaxed = reduceCooldownCount >= REDUCE_CD_MAX_COUNT;
         
         if (snitch.revealed || (isReduceCooldownMaxed && state.credits >= getCrewCost(snitch))) {
