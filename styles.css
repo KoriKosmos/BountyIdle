@@ -163,6 +163,111 @@ body {
   font-size: var(--font-size-sm);
 }
 
+
+
+/* Dev Menu Panel */
+.dev-menu-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.dev-menu-panel .panel {
+  margin: 0;
+}
+
+.dev-menu-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-close {
+  background: var(--accent-danger);
+  color: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.btn-close:hover {
+  background: #d53f3f;
+  transform: scale(1.1);
+}
+
+.dev-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.dev-section h3 {
+  color: var(--text-accent);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-lg);
+}
+
+.dev-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.btn-dev-action {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-dev-action:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.dev-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  color: var(--text-secondary);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+}
+
+.dev-info div {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+/* Dev toast styling */
+.toast.dev-toast {
+  border-left: 4px solid var(--accent-warning) !important;
+  background: var(--bg-tertiary) !important;
+}
+
 /* Main game layout */
 .game-main {
   display: grid;

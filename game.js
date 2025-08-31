@@ -114,6 +114,7 @@ class GameManager {
   init() {
     this.load();
     this.setupEventListeners();
+    this.setupDevMenuEvents();
     this.startGameLoop();
     this.updateUI();
     this.updateSnitchAutoclicker();
@@ -751,6 +752,8 @@ class GameManager {
       toast.style.borderLeft = "4px solid var(--accent-success)";
     } else if (type === "manual-save") {
       toast.style.borderLeft = "4px solid var(--accent-primary)";
+    } else if (type === "dev") {
+      toast.classList.add("dev-toast");
     }
     
     container.appendChild(toast);
@@ -795,3 +798,163 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1000);
 });
+
+// Dev Menu functionality - Add to GameManager class after last saved
+GameManager.prototype.setupDevMenuEvents = function() {
+  // Keyboard listener for "kori" to open dev menu
+  let koriBuffer = '';
+  document.addEventListener('keydown', (e) => {
+    // Add the pressed key to the buffer
+    koriBuffer += e.key.toLowerCase();
+    
+    // Keep only the last 4 characters to check for "kori"
+    if (koriBuffer.length > 4) {
+      koriBuffer = koriBuffer.slice(-4);
+    }
+    
+    // Check if "kori" was typed
+    if (koriBuffer === 'kori') {
+      this.toggleDevMenu();
+      koriBuffer = ''; // Reset buffer after opening
+    }
+    
+    // ESC key to close dev menu
+    if (e.key === 'Escape') {
+      const devPanel = this.getElement("devMenuPanel");
+      if (devPanel && !devPanel.classList.contains('hidden')) {
+        this.toggleDevMenu();
+      }
+    }
+  });
+
+  // Close dev menu
+  this.getElement("closeDevMenuBtn").addEventListener("click", () => {
+    this.toggleDevMenu();
+  });
+
+  // Dev action buttons
+  document.addEventListener('click', (e) => {
+    if (e.target.hasAttribute('data-dev-action')) {
+      const action = e.target.getAttribute('data-dev-action');
+      this.handleDevAction(action);
+    }
+  });
+
+  // Close dev menu when clicking outside
+  document.addEventListener('click', (e) => {
+    const devPanel = this.getElement("devMenuPanel");
+    if (devPanel && !devPanel.contains(e.target)) {
+      if (!devPanel.classList.contains('hidden')) {
+        this.toggleDevMenu();
+      }
+    }
+  });
+};
+
+GameManager.prototype.toggleDevMenu = function() {
+  const panel = this.getElement("devMenuPanel");
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    this.updateDevMenuInfo();
+  } else {
+    panel.classList.add('hidden');
+  }
+};
+
+GameManager.prototype.updateDevMenuInfo = function() {
+  this.getElement("devTicks").textContent = this.state.ticks;
+  this.getElement("devUnbanked").textContent = this.formatNumber(this.state.unbanked, 2);
+  this.getElement("devContractProgress").textContent = this.formatNumber(this.state.contractProgress);
+};
+
+GameManager.prototype.handleDevAction = function(action) {
+  switch (action) {
+    case 'addCredits':
+      this.state.credits += 1000;
+      this.showToast("Added 1000 credits", "dev");
+      break;
+      
+    case 'addCrew':
+      for (const crew of this.crewTypes) {
+        crew.count += 10;
+      }
+      this.updateSnitchAutoclicker();
+      this.showToast("Added 10 of each crew type", "dev");
+      break;
+      
+    case 'maxUpgrades':
+      for (const upgrade of this.upgradeTypes) {
+        if (upgrade.maxCount) {
+          this.state.upgrades[upgrade.id] = upgrade.maxCount;
+        } else {
+          this.state.upgrades[upgrade.id] = 100;
+        }
+      }
+      this.applyUpgradeEffects();
+      this.showToast("Maxed all upgrades", "dev");
+      break;
+      
+    case 'completeContract':
+      if (this.state.contractActive) {
+        const contract = this.contracts[this.state.currentContract];
+        this.state.contractProgress = contract.goal;
+        this.checkAndCompleteContract(contract);
+        this.showToast("Contract completed", "dev");
+      } else {
+        this.showToast("No active contract", "dev");
+      }
+      break;
+      
+    case 'toggleAutosave':
+      this.autosaveEnabled = !this.autosaveEnabled;
+      this.getElement("autosaveToggleBtn").textContent = this.autosaveEnabled ? "Autosave ON" : "Autosave OFF";
+      this.getElement("autosaveToggleBtn").classList.toggle("btn-active", this.autosaveEnabled);
+      this.showToast(`Autosave ${this.autosaveEnabled ? 'enabled' : 'disabled'}`, "dev");
+      break;
+      
+    case 'forceSave':
+      this.save();
+      this.lastSaveTime = Date.now();
+      this.updateLastSaved();
+      this.showToast("Game force saved", "dev");
+      break;
+      
+    case 'exportSave':
+      const saveData = localStorage.getItem(CONFIG.SAVE_KEY);
+      const blob = new Blob([saveData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bounty-save-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.showToast("Save exported", "dev");
+      break;
+      
+    case 'importSave':
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const saveData = JSON.parse(e.target.result);
+              localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(saveData));
+              location.reload();
+            } catch (error) {
+              this.showToast("Invalid save file", "dev");
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      input.click();
+      break;
+  }
+  
+  this.updateUI();
+  this.updateDevMenuInfo();
+};

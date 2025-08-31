@@ -90,6 +90,46 @@
             </aside>
         </main>
 
+        <!-- Dev Menu Panel -->
+        <div id="devMenuPanel" class="dev-menu-panel hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Developer Menu</h2>
+                    <button id="closeDevMenuBtn" class="btn btn-close">×</button>
+                </div>
+                <div class="panel-content">
+                    <div class="dev-section">
+                        <h3>Resources</h3>
+                        <div class="dev-controls">
+                            <button class="btn btn-dev-action" data-dev-action="addCredits">+1000 Credits</button>
+                            <button class="btn btn-dev-action" data-dev-action="addCrew">+10 Crew</button>
+                            <button class="btn btn-dev-action" data-dev-action="maxUpgrades">Max Upgrades</button>
+                            <button class="btn btn-dev-action" data-dev-action="completeContract">Complete Contract</button>
+                        </div>
+                    </div>
+                    
+                    <div class="dev-section">
+                        <h3>Game State</h3>
+                        <div class="dev-info">
+                            <div>Ticks: <span id="devTicks">0</span></div>
+                            <div>Unbanked: <span id="devUnbanked">0</span></div>
+                            <div>Contract Progress: <span id="devContractProgress">0</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="dev-section">
+                        <h3>Debug</h3>
+                        <div class="dev-controls">
+                            <button class="btn btn-dev-action" data-dev-action="toggleAutosave">Toggle Autosave</button>
+                            <button class="btn btn-dev-action" data-dev-action="forceSave">Force Save</button>
+                            <button class="btn btn-dev-action" data-dev-action="exportSave">Export Save</button>
+                            <button class="btn btn-dev-action" data-dev-action="importSave">Import Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Save controls -->
         <div class="save-controls">
             <button id="manualSaveBtn" class="btn btn-control">Manual Save</button>
