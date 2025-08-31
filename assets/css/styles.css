@@ -1,0 +1,259 @@
+:root {
+  --bg-primary: #0f1115;
+  --bg-secondary: #14151c;
+  --bg-tertiary: #181922;
+  --border-color: #232333;
+  --text-primary: #e9e9ee;
+  --text-secondary: #a8a8b3;
+  --accent-color: #ffb300;
+  --accent-hover: #e6a200;
+  --danger-color: #ff2d2d;
+  --success-color: #35c46a;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --fs-sm: 13px;
+  --fs-base: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  background: linear-gradient(180deg, var(--bg-primary), #0d0f13 40%);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.title {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.last-saved {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+@media (min-width: 900px) {
+  .main-grid {
+    grid-template-columns: 280px 1fr 280px;
+  }
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+}
+
+.card-header {
+  margin-bottom: var(--space-4);
+}
+
+.card-title {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.stat {
+  color: var(--text-secondary);
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border-color);
+  background: #1a1b24;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  transition: transform .15s ease, background .15s ease, border-color .2s ease;
+  min-height: 44px;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #212332;
+}
+
+.btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #2a2d3c, #1e2130);
+  border-color: #2f3244;
+}
+
+.control-btn {
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: #181a25;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.control-btn:hover {
+  background: #1f2230;
+}
+
+.control-btn.danger {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+  color: white;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+}
+
+.item-title {
+  font-weight: 600;
+}
+
+.item-subtitle {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.action-area {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-6) 0;
+}
+
+.cooldown {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.hidden { display: none; }
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: grid;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.toast {
+  background: #202433;
+  color: var(--text-primary);
+  border: 1px solid #2a2f45;
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.contracts {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.progress {
+  width: 100%;
+  height: 10px;
+  background: #1c1f2b;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-color), #ffd85d);
+  width: 0%;
+}
+
