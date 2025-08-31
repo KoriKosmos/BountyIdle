@@ -6,7 +6,6 @@ const CONFIG = {
   REDUCE_CD_MAX_COUNT: 20,
   SINGLE_TICK_THRESHOLD: 1,
   TICK_INTERVAL_TOLERANCE: 0.001,
-  UI_UPDATE_THROTTLE_MS: 100,
   AUTOSAVE_INTERVAL_MS: 30000,
   TOAST_DURATION_MS: 3000,
   MAX_TOASTS: 5
@@ -101,7 +100,6 @@ class GameManager {
     this.contracts = CONTRACTS;
     
     this.snitchTimer = null;
-    this.pendingUIUpdate = false;
     this.lastSaveTime = Date.now();
     this.autosaveEnabled = true;
     this.autosaveId = null;
@@ -243,7 +241,6 @@ class GameManager {
       this.snitchTimer = null;
     }
     
-    this.updateUIThrottleRate();
     const intervalMs = this.getSnitchIntervalMs(snitch);
     if (!intervalMs) return;
     
@@ -257,32 +254,15 @@ class GameManager {
         } else {
           this.state.credits += this.getClickValue();
         }
+        // Only update critical UI elements, no visual flashing
         this.updateCriticalUI();
-        this.scheduleUIUpdate();
       }
     }, intervalMs);
   }
 
-  updateUIThrottleRate() {
-    const snitch = this.crewTypes[1];
-    if (snitch.count > 50) {
-      CONFIG.UI_UPDATE_THROTTLE_MS = 250;
-    } else if (snitch.count > 20) {
-      CONFIG.UI_UPDATE_THROTTLE_MS = 150;
-    } else {
-      CONFIG.UI_UPDATE_THROTTLE_MS = 100;
-    }
-  }
 
-  scheduleUIUpdate() {
-    if (!this.pendingUIUpdate) {
-      this.pendingUIUpdate = true;
-      setTimeout(() => {
-        this.updateUI();
-        this.pendingUIUpdate = false;
-      }, CONFIG.UI_UPDATE_THROTTLE_MS);
-    }
-  }
+
+
 
   updateCriticalUI() {
     this.getElement("creditsDisplay").textContent = this.formatNumber(this.state.credits);
@@ -315,7 +295,17 @@ class GameManager {
     let html = "";
     
     for (const crew of this.crewTypes) {
-      const shouldShow = crew.revealed || this.state.credits >= this.getCrewCost(crew);
+      let shouldShow = crew.revealed;
+      
+      // Special logic for Snitch - reveal when Reduce Cooldown is maxed
+      if (crew.id === 'snitch') {
+        const reduceCooldownCount = this.state.upgrades.reduceCooldown || 0;
+        shouldShow = crew.revealed || reduceCooldownCount >= CONFIG.REDUCE_CD_MAX_COUNT;
+      } else {
+        // Other crew revealed when affordable
+        shouldShow = crew.revealed || this.state.credits >= this.getCrewCost(crew);
+      }
+      
       if (!shouldShow) continue;
 
       if (!crew.revealed) {
