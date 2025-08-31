@@ -325,6 +325,16 @@ body {
   background: var(--bg-tertiary);
   padding: var(--space-lg);
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .panel-title {
@@ -336,6 +346,24 @@ body {
 
 .panel-content {
   padding: var(--space-lg);
+}
+
+/* Credits display in panel header */
+.credits-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.credits-label {
+  color: var(--text-secondary);
+}
+
+.credits-value {
+  color: var(--accent-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Game center */
@@ -692,6 +720,23 @@ body {
   flex-direction: column;
   gap: var(--space-sm);
   z-index: 1000;
+  align-items: flex-end;
+}
+
+.save-controls-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.last-saved {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: right;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
 }
 
 /* Toast notifications */
@@ -768,10 +813,14 @@ body {
   
   .panel-header {
     padding: var(--space-md);
+    flex-direction: column;
+    gap: var(--space-sm);
+    align-items: stretch;
   }
   
   .panel-title {
     font-size: var(--font-size-lg);
+    text-align: center;
   }
   
   .btn {
@@ -803,12 +852,23 @@ body {
     left: var(--space-sm);
     flex-direction: row;
     justify-content: center;
+    align-items: center;
+  }
+  
+  .save-controls-left {
+    flex-direction: row;
+    gap: var(--space-sm);
   }
   
   .save-controls .btn {
     flex: 1;
     min-width: 0;
     padding: var(--space-sm);
+  }
+  
+  .last-saved {
+    font-size: var(--font-size-xs);
+    padding: var(--space-xs);
   }
   
   .toast-container {

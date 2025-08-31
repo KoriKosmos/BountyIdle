@@ -12,20 +12,6 @@
 
     <!-- Main container -->
     <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="header-content">
-                <h1 class="app-title">Bounty Office</h1>
-                <div class="header-stats">
-                    <div class="credits-display">
-                        <span class="credits-label">Credits:</span>
-                        <span class="credits-value" id="creditsDisplay">0</span>
-                    </div>
-                    <div class="last-saved" id="lastSaved">Last saved just now</div>
-                </div>
-            </div>
-        </header>
-
         <!-- Main game area -->
         <main class="game-main">
             <!-- Left sidebar - Crew -->
@@ -44,7 +30,11 @@
             <section class="game-center">
                 <div class="panel">
                     <div class="panel-header">
-                        <h2 class="panel-title">Bounty Office</h2>
+                        <h2 class="panel-title gradient-text">Bounty Office</h2>
+                        <div class="credits-display">
+                            <span class="credits-label">Credits:</span>
+                            <span class="credits-value" id="creditsDisplay">0</span>
+                        </div>
                     </div>
                     <div class="panel-content">
                         <!-- Main action area -->
@@ -132,9 +122,12 @@
 
         <!-- Save controls -->
         <div class="save-controls">
-            <button id="manualSaveBtn" class="btn btn-control">Manual Save</button>
-            <button id="autosaveToggleBtn" class="btn btn-control btn-active">Autosave ON</button>
-            <button id="resetBtn" class="btn btn-control btn-danger">Reset Save</button>
+            <div class="save-controls-left">
+                <button id="manualSaveBtn" class="btn btn-control">Manual Save</button>
+                <button id="autosaveToggleBtn" class="btn btn-control btn-active">Autosave ON</button>
+                <button id="resetBtn" class="btn btn-control btn-danger">Reset Save</button>
+            </div>
+            <div class="last-saved" id="lastSaved">Last saved just now</div>
         </div>
     </div>
 
