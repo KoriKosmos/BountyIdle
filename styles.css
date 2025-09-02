@@ -515,6 +515,21 @@ body {
   overflow: hidden;
 }
 
+.crew-btn.unavailable {
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.crew-btn.unavailable:hover {
+  transform: none !important;
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+}
+
 .crew-section:last-child {
   margin-bottom: 0;
 }
