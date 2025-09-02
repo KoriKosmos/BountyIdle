@@ -326,7 +326,7 @@ class GameManager {
       }
 
       html += `
-        <div class="crew-section ${!canAfford ? 'unavailable' : ''}" data-crew-id="${crew.id}">
+        <div class="crew-section" data-crew-id="${crew.id}">
           <div class="crew-header">
             <h3 class="crew-name">${crew.name}</h3>
             <div class="crew-stats">
@@ -336,7 +336,7 @@ class GameManager {
             </div>
           </div>
           <div class="crew-actions">
-            <button class="btn crew-btn" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
+            <button class="btn crew-btn ${!canAfford ? 'unavailable' : ''}" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
               Hire ${crew.name}
             </button>
             <div class="crew-cost">

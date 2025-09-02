@@ -515,24 +515,19 @@ body {
   overflow: hidden;
 }
 
-.crew-section.unavailable {
+.crew-btn.unavailable {
   opacity: 0.6;
   filter: grayscale(0.3);
-  background: var(--bg-quaternary, #2a2a2a);
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
 }
 
-.crew-section.unavailable:hover {
-  transform: none;
-  box-shadow: none;
-  background: var(--bg-quaternary, #2a2a2a);
-}
-
-.crew-section.unavailable .crew-name {
-  color: var(--text-muted);
-}
-
-.crew-section.unavailable .crew-stats {
-  opacity: 0.8;
+.crew-btn.unavailable:hover {
+  transform: none !important;
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
 }
 
 .crew-section:last-child {
