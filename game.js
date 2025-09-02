@@ -113,6 +113,7 @@ class GameManager {
     this.load();
     this.setupEventListeners();
     this.setupDevMenuEvents();
+    this.loadSettings(); // Load settings on startup
     this.startGameLoop();
     this.updateUI();
     this.updateSnitchAutoclicker();
@@ -336,7 +337,7 @@ class GameManager {
             </div>
           </div>
           <div class="crew-actions">
-            <button class="${['btn', 'crew-btn', !canAfford ? 'unavailable' : ''].filter(Boolean).join(' ')}" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
+            <button class="btn purchase-btn" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
               Hire ${crew.name}
             </button>
             <div class="crew-cost">
@@ -386,7 +387,7 @@ class GameManager {
             <span class="upgrade-cost">${isMaxed ? '' : `Cost: ${cost}`}</span>
           </div>
           <div class="upgrade-description">${upgrade.description}${extra}</div>
-          <button class="btn btn-secondary" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
+          <button class="btn purchase-btn" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
             ${isMaxed ? 'Maxed' : 'Purchase'}
           </button>
         </div>
@@ -428,7 +429,7 @@ class GameManager {
       container.innerHTML = `
         <div class="contract-progress">
           <p>${contract.description}</p>
-          <button class="btn btn-primary" id="takeContractBtn">Take Contract</button>
+          <button class="btn btn-contract" id="takeContractBtn">Take Contract</button>
         </div>
       `;
     } else {
@@ -618,6 +619,158 @@ class GameManager {
         this.save();
       }
     });
+
+    // Settings menu
+    this.setupSettingsEvents();
+  }
+
+  setupSettingsEvents() {
+    // Settings button
+    this.getElement("settingsBtn").addEventListener("click", () => {
+      this.openSettingsMenu();
+    });
+
+    // Close settings button
+    this.getElement("closeSettingsBtn").addEventListener("click", () => {
+      this.closeSettingsMenu();
+    });
+
+    // Font select
+    this.getElement("fontSelect").addEventListener("change", (e) => {
+      this.updateFontMode(e.target.value);
+    });
+
+    // CRT strength slider
+    this.getElement("crtStrengthSlider").addEventListener("input", (e) => {
+      this.updateCrtStrength(e.target.value);
+    });
+
+    // Apply settings
+    this.getElement("applySettingsBtn").addEventListener("click", () => {
+      this.applySettings();
+    });
+
+    // Reset settings
+    this.getElement("resetSettingsBtn").addEventListener("click", () => {
+      this.resetSettings();
+    });
+
+    // Close on escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.closeSettingsMenu();
+      }
+    });
+  }
+
+  openSettingsMenu() {
+    const panel = this.getElement("settingsMenuPanel");
+    panel.classList.remove("hidden");
+    
+    // Load current settings
+    this.loadSettings();
+  }
+
+  closeSettingsMenu() {
+    const panel = this.getElement("settingsMenuPanel");
+    panel.classList.add("hidden");
+  }
+
+  loadSettings() {
+    const fontSelect = this.getElement("fontSelect");
+    const crtSlider = this.getElement("crtStrengthSlider");
+    const crtValue = this.getElement("crtStrengthValue");
+    
+    // Load from localStorage or use defaults
+    const settings = JSON.parse(localStorage.getItem("bountyIdle_settings") || "{}");
+    
+    fontSelect.value = settings.fontMode || "retro";
+    crtSlider.value = settings.crtStrength || 50;
+    crtValue.textContent = `${crtSlider.value}%`;
+    
+    // Apply current settings
+    this.updateFontMode(fontSelect.value);
+    this.updateCrtStrength(crtSlider.value);
+  }
+
+  updateFontMode(mode) {
+    const body = document.body;
+    body.classList.remove("font-retro", "font-original");
+    body.classList.add(`font-${mode}`);
+    
+    // Update CSS variable
+    document.documentElement.style.setProperty("--font-mode", mode);
+  }
+
+  updateCrtStrength(strength) {
+    const crtValue = this.getElement("crtStrengthValue");
+    crtValue.textContent = `${strength}%`;
+    
+    // Update CSS variable
+    document.documentElement.style.setProperty("--crt-strength", strength);
+    
+    // Update CRT warping effects
+    this.updateCrtWarping(strength);
+  }
+
+  updateCrtWarping(strength) {
+    const crtScreen = this.getElement("crtScreen");
+    const crtCorners = this.getElement("crtCorners");
+    
+    if (!crtScreen || !crtCorners) return;
+    
+    // Calculate warping intensity based on strength
+    const intensity = strength / 100;
+    
+    // Update screen warping - much more conservative values
+    const screenRotation = 0.3 + (intensity * 0.4); // 0.3-0.7 degrees
+    const screenPerspective = 1500 + (intensity * 500); // 1500-2000px
+    
+    crtScreen.style.transform = `perspective(${screenPerspective}px) rotateX(${screenRotation}deg)`;
+    
+    // Update corner warping - much more conservative values
+    const cornerRotationX = 0.5 + (intensity * 0.5); // 0.5-1.0 degrees
+    const cornerRotationY = 0.3 + (intensity * 0.4); // 0.3-0.7 degrees
+    const cornerPerspective = 800 + (intensity * 400); // 800-1200px
+    
+    crtCorners.style.transform = `perspective(${cornerPerspective}px) rotateX(${cornerRotationX}deg) rotateY(${cornerRotationY}deg)`;
+    
+    // Keep opacity at 1 to avoid darkening
+    crtScreen.style.opacity = 1;
+    crtCorners.style.opacity = 1;
+  }
+
+  applySettings() {
+    const fontSelect = this.getElement("fontSelect");
+    const crtSlider = this.getElement("crtStrengthSlider");
+    
+    const settings = {
+      fontMode: fontSelect.value,
+      crtStrength: parseInt(crtSlider.value)
+    };
+    
+    localStorage.setItem("bountyIdle_settings", JSON.stringify(settings));
+    
+    this.updateFontMode(settings.fontMode);
+    this.updateCrtStrength(settings.crtStrength);
+    
+    this.showToast("Settings applied!", "settings");
+    this.closeSettingsMenu();
+  }
+
+  resetSettings() {
+    const fontSelect = this.getElement("fontSelect");
+    const crtSlider = this.getElement("crtStrengthSlider");
+    
+    fontSelect.value = "retro";
+    crtSlider.value = 50;
+    
+    this.updateFontMode("retro");
+    this.updateCrtStrength(50);
+    
+    localStorage.removeItem("bountyIdle_settings");
+    
+    this.showToast("Settings reset to defaults!", "settings");
   }
 
   handleCrewHire(crewId) {

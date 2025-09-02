@@ -1,38 +1,50 @@
+/* Import retro-futuristic fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
 /* CSS Variables for consistent theming */
 :root {
-  /* Colors */
-  --bg-primary: #0a0a0f;
+  /* Colors - Deep Space Monochrome + Single Neon */
+  --bg-primary: #0a0a1a;
   --bg-secondary: #1a1a2e;
   --bg-tertiary: #16213e;
-  --bg-panel: #0f3460;
+  --bg-panel: #1e2a4a;
   --border-color: #2d3748;
   --border-light: #4a5568;
   
-  /* Text colors */
-  --text-primary: #f7fafc;
-  --text-secondary: #a0aec0;
-  --text-accent: #90cdf4;
-  --text-muted: #718096;
+  /* Text colors - Clean hierarchy */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-accent: #60a5fa;
+  --text-muted: #64748b;
   
-  /* Accent colors */
-  --accent-primary: #ff6b35;
-  --accent-secondary: #f7931e;
-  --accent-success: #48bb78;
-  --accent-danger: #f56565;
-  --accent-warning: #ed8936;
+  /* Tier 1: Core Actions - Brightest neon */
+  --accent-primary: #00b3e6;
+  --accent-primary-hover: #22d3ee;
+  --accent-success: #22c55e;
+  --accent-success-hover: #34d399;
   
-  /* Button colors */
+  /* Tier 2: Progression - Muted neon */
+  --accent-secondary: #5b21b6;
+  --accent-secondary-hover: #7c3aed;
+  
+  /* Tier 3: Contextual - Subtle accents */
+  --accent-tertiary: #4a5568;
+  --accent-danger: #ef4444;
+  --accent-warning: #f59e0b;
+  
+  /* Button colors - Unified around the neon */
   --btn-primary: var(--accent-primary);
-  --btn-primary-hover: #e55a2b;
+  --btn-primary-hover: var(--accent-primary-hover);
   --btn-secondary: var(--bg-tertiary);
   --btn-secondary-hover: #1e3a5f;
   --btn-disabled: #4a5568;
   
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
   
   /* Border radius */
   --radius-sm: 6px;
@@ -61,6 +73,10 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-slow: 0.35s ease;
+  
+  /* Settings */
+  --font-mode: 'retro';
+  --crt-strength: 50;
 }
 
 /* Reset and base styles */
@@ -76,14 +92,192 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(0, 179, 230, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(91, 33, 182, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  position: relative;
+}
+
+/* CRT Screen Effect - Inspired by CRT shader effects */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 2px,
+      rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 4px
+    );
+  pointer-events: none;
+  z-index: 1000;
+  animation: scanlines 0.1s linear infinite;
+  opacity: calc(var(--crt-strength) / 100);
+  transform: perspective(2000px) rotateX(0.5deg);
+  border-radius: 10px;
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(0, 179, 230, calc(0.05 * var(--crt-strength) / 50));
+}
+
+/* CRT Vignette Effect */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, calc(0.3 * var(--crt-strength) / 50)) 100%
+  );
+  pointer-events: none;
+  z-index: 999;
+  opacity: calc(var(--crt-strength) / 100);
+  border-radius: 10px;
+}
+
+/* CRT Screen Warping Container */
+.crt-screen::before {
+  content: '';
+  position: absolute;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  background: transparent;
+  transform: perspective(1000px) rotateX(1deg);
+  border-radius: 20px;
+}
+
+/* CRT Corner Warping */
+.crt-corners {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 997;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.crt-corners::before {
+  content: '';
+  position: absolute;
+  top: -2%;
+  left: -2%;
+  width: 104%;
+  height: 104%;
+  background: transparent;
+  transform: perspective(800px) rotateX(0.5deg) rotateY(0.3deg);
+  border-radius: 20px;
+}
+
+/* CRT Scanlines Animation */
+@keyframes scanlines {
+  0% { transform: translateY(0) perspective(1000px) rotateX(2deg); }
+  100% { transform: translateY(4px) perspective(1000px) rotateX(2deg); }
+}
+
+/* CRT Warping Animation */
+@keyframes crtWarp {
+  0% { transform: perspective(800px) rotateX(1deg) scale(1); }
+  50% { transform: perspective(800px) rotateX(1.2deg) scale(1.02); }
+  100% { transform: perspective(800px) rotateX(1deg) scale(1); }
+}
+
+.crt-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 998;
+  transform: perspective(1500px) rotateX(0.3deg);
+  transform-origin: center center;
+  border-radius: 15px;
+  overflow: hidden;
+  animation: crtWarp 12s ease-in-out infinite;
+}
+
+/* CRT Glow Effect for Text */
+.crt-glow {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+/* Font mode classes */
+.font-retro {
+  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.font-original {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Retro mode - Apply retro fonts to specific elements */
+.font-retro .app-title,
+.font-retro .panel-title,
+.font-retro .btn-primary,
+.font-retro .btn-contract,
+.font-retro .crew-name,
+.font-retro .upgrade-name {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.font-retro .credits-value,
+.font-retro .purchase-btn,
+.font-retro .btn-value,
+.font-retro .setting-item label,
+.font-retro .setting-select,
+.font-retro .slider-value {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Original mode - Use the original font stack exactly as specified */
+.font-original .app-title,
+.font-original .panel-title,
+.font-original .btn-primary,
+.font-original .btn-contract,
+.font-original .crew-name,
+.font-original .upgrade-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.font-original .credits-value,
+.font-original .purchase-btn,
+.font-original .btn-value,
+.font-original .setting-item label,
+.font-original .setting-select,
+.font-original .slider-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Utility classes */
@@ -125,13 +319,16 @@ body {
 
 .app-title {
   font-size: var(--font-size-3xl);
-  font-weight: 700;
+  font-weight: 900;
   color: var(--text-primary);
   margin: 0;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .header-stats {
@@ -164,6 +361,132 @@ body {
 }
 
 
+
+/* Settings button styling */
+.settings-icon {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+}
+
+/* Settings Menu Panel */
+.settings-menu-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.settings-menu-panel .panel {
+  margin: 0;
+}
+
+.settings-menu-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.settings-section h3 {
+  color: var(--text-accent);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-lg);
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.setting-item label {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.setting-select {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: var(--font-size-sm);
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 5px rgba(0, 179, 230, 0.3);
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.setting-slider {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.setting-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 179, 230, 0.5);
+}
+
+.setting-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 10px rgba(0, 179, 230, 0.5);
+}
+
+.slider-value {
+  color: var(--accent-primary);
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+.settings-controls {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
 
 /* Dev Menu Panel */
 .dev-menu-panel {
@@ -306,7 +629,14 @@ body {
   }
 }
 
-/* Panels */
+/* 
+ * Retro-futuristic UI with CRT effects
+ * Fonts: Orbitron (Google Fonts) - https://fonts.google.com/specimen/Orbitron
+ *        Share Tech Mono (Google Fonts) - https://fonts.google.com/specimen/Share+Tech+Mono
+ * CRT effects inspired by various open source CRT shader projects
+ */
+
+/* Sci-fi styling enhancements */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -314,11 +644,44 @@ body {
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   transition: var(--transition-normal);
+  position: relative;
+  backdrop-filter: blur(1px);
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  opacity: 0.7;
+}
+
+.panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 179, 230, 0.02) 1px,
+      rgba(0, 179, 230, 0.02) 2px
+    );
+  pointer-events: none;
+  opacity: 0.3;
 }
 
 .panel:hover {
   box-shadow: var(--shadow-xl);
   transform: translateY(-2px);
+  border-color: var(--accent-primary);
 }
 
 .panel-header {
@@ -339,9 +702,28 @@ body {
 
 .panel-title {
   font-size: var(--font-size-xl);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Tier 1: Core Actions - Hunt Button */
+.btn-primary {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px rgba(0, 179, 230, 0.4);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-lg) var(--space-xl);
+  min-height: 56px;
+  border-radius: var(--radius-lg);
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .panel-content {
@@ -425,27 +807,38 @@ body {
   transform: translateY(0);
 }
 
-/* Button variants */
+/* Tier 1: Core Actions - Hunt Button */
 .btn-primary {
-  background: var(--btn-primary);
+  background: var(--accent-primary);
   color: white;
-  border-color: var(--btn-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px rgba(0, 179, 230, 0.4);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-lg) var(--space-xl);
+  min-height: 56px;
+  border-radius: var(--radius-lg);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--btn-primary-hover);
-  border-color: var(--btn-primary-hover);
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+  box-shadow: 0 0 25px rgba(0, 179, 230, 0.7);
+  transform: translateY(-3px);
 }
 
+/* Tier 3: Contextual - Secondary buttons */
 .btn-secondary {
-  background: var(--btn-secondary);
+  background: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--border-color);
+  box-shadow: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--btn-secondary-hover);
-  border-color: var(--border-light);
+  background: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 5px rgba(91, 33, 182, 0.2);
 }
 
 .btn-control {
@@ -455,10 +848,13 @@ body {
   font-size: var(--font-size-sm);
   padding: var(--space-sm) var(--space-md);
   min-height: 40px;
+  box-shadow: none;
 }
 
 .btn-control:hover:not(:disabled) {
   background: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 5px rgba(91, 33, 182, 0.2);
 }
 
 .btn-active {
@@ -474,19 +870,42 @@ body {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #e53e3e;
-  border-color: #e53e3e;
+  background: #dc2626;
+  border-color: #dc2626;
 }
 
-/* Button content */
+/* Button content with retro styling */
 .btn-text {
   font-weight: 600;
+  text-shadow: 0 0 5px currentColor;
 }
 
 .btn-value {
   font-size: var(--font-size-sm);
   opacity: 0.8;
   font-weight: 500;
+  font-family: 'Share Tech Mono', monospace;
+  text-shadow: 0 0 3px currentColor;
+}
+
+/* Crew and upgrade names with retro styling */
+.crew-name {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-sm) 0;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.upgrade-name {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 /* Cooldown overlay */
@@ -503,6 +922,68 @@ body {
   border-radius: var(--radius-md);
 }
 
+/* Tier 1: Core Actions - Contract Button */
+.btn-contract {
+  background: var(--accent-success);
+  color: white;
+  border-color: var(--accent-success);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-lg) var(--space-xl);
+  min-height: 56px;
+  border-radius: var(--radius-lg);
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.btn-contract:hover:not(:disabled) {
+  background: var(--accent-success-hover);
+  border-color: var(--accent-success-hover);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.7);
+  transform: translateY(-3px);
+}
+
+/* Tier 2: Progression - Purchase buttons (Crew & Upgrades) */
+.purchase-btn {
+  width: 100%;
+  justify-content: center;
+  font-weight: 600;
+  padding: var(--space-md) var(--space-lg);
+  min-height: 48px;
+  border-width: 2px;
+  background: var(--accent-secondary);
+  color: white;
+  border-color: var(--accent-secondary);
+  transition: var(--transition-fast);
+  box-shadow: 0 0 8px rgba(91, 33, 182, 0.25);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+.purchase-btn:hover:not(:disabled) {
+  background: var(--accent-secondary-hover);
+  border-color: var(--accent-secondary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+}
+
+.purchase-btn:disabled {
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.purchase-btn:disabled:hover {
+  transform: none !important;
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+}
+
 /* Crew sections */
 .crew-section {
   background: var(--bg-tertiary);
@@ -513,21 +994,6 @@ body {
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
-}
-
-.crew-btn.unavailable {
-  opacity: 0.6;
-  filter: grayscale(0.3);
-  background: var(--bg-quaternary, #2a2a2a) !important;
-  border-color: var(--border-muted, #555) !important;
-  color: var(--text-muted) !important;
-  cursor: not-allowed;
-}
-
-.crew-btn.unavailable:hover {
-  transform: none !important;
-  background: var(--bg-quaternary, #2a2a2a) !important;
-  border-color: var(--border-muted, #555) !important;
 }
 
 .crew-section:last-child {
@@ -554,6 +1020,7 @@ body {
   background: var(--bg-secondary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
 }
 
 .crew-header {
@@ -596,15 +1063,6 @@ body {
   gap: var(--space-sm);
 }
 
-.crew-btn {
-  width: 100%;
-  justify-content: center;
-  font-weight: 600;
-  padding: var(--space-md) var(--space-lg);
-  min-height: 48px;
-  border-width: 2px;
-}
-
 .crew-cost {
   text-align: center;
   padding: var(--space-xs) 0;
@@ -612,7 +1070,7 @@ body {
   font-size: var(--font-size-sm);
 }
 
-/* Upgrade sections */
+/* Upgrade sections with sci-fi styling */
 .upgrade-section {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
@@ -620,6 +1078,24 @@ body {
   padding: var(--space-md);
   margin-bottom: var(--space-md);
   transition: var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.upgrade-section:hover::before {
+  opacity: 1;
 }
 
 .upgrade-section:last-child {
@@ -630,6 +1106,7 @@ body {
   background: var(--bg-secondary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
 }
 
 .upgrade-section.maxed {

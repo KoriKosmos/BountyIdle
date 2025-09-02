@@ -10,6 +10,10 @@
     <!-- Toast notifications -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- CRT Warping Effects -->
+    <div class="crt-screen" id="crtScreen"></div>
+    <div class="crt-corners" id="crtCorners"></div>
+
     <!-- Main container -->
     <div class="app-container">
         <!-- Main game area -->
@@ -35,6 +39,9 @@
                             <span class="credits-label">Credits:</span>
                             <span class="credits-value" id="creditsDisplay">0</span>
                         </div>
+                        <button id="settingsBtn" class="btn btn-control" title="Settings">
+                            <span class="settings-icon">⚙</span>
+                        </button>
                     </div>
                     <div class="panel-content">
                         <!-- Main action area -->
@@ -114,6 +121,47 @@
                             <button class="btn btn-dev-action" data-dev-action="forceSave">Force Save</button>
                             <button class="btn btn-dev-action" data-dev-action="exportSave">Export Save</button>
                             <button class="btn btn-dev-action" data-dev-action="importSave">Import Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Menu Panel -->
+        <div id="settingsMenuPanel" class="settings-menu-panel hidden">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Settings</h2>
+                    <button id="closeSettingsBtn" class="btn btn-close">×</button>
+                </div>
+                <div class="panel-content">
+                    <div class="settings-section">
+                        <h3>Typography</h3>
+                        <div class="setting-item">
+                            <label for="fontSelect">Text Font:</label>
+                            <select id="fontSelect" class="setting-select">
+                                <option value="retro">Retro-Futuristic (Orbitron + Share Tech Mono)</option>
+                                <option value="original">Original Font Stack</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Visual Effects</h3>
+                        <div class="setting-item">
+                            <label for="crtStrengthSlider">CRT Filter Strength:</label>
+                            <div class="slider-container">
+                                <input type="range" id="crtStrengthSlider" class="setting-slider" min="0" max="100" value="50">
+                                <span class="slider-value" id="crtStrengthValue">50%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Actions</h3>
+                        <div class="settings-controls">
+                            <button class="btn btn-secondary" id="resetSettingsBtn">Reset to Defaults</button>
+                            <button class="btn btn-primary" id="applySettingsBtn">Apply Settings</button>
                         </div>
                     </div>
                 </div>
