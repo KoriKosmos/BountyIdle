@@ -643,11 +643,6 @@ class GameManager {
       this.updateFontMode(e.target.value);
     });
 
-    // CRT strength slider
-    this.getElement("crtStrengthSlider").addEventListener("input", (e) => {
-      this.updateCrtStrength(e.target.value);
-    });
-
     // CRT preset buttons
     document.querySelectorAll('.crt-preset').forEach(button => {
       button.addEventListener('click', (e) => {
@@ -696,19 +691,14 @@ class GameManager {
 
   loadSettings() {
     const fontSelect = this.getElement("fontSelect");
-    const crtSlider = this.getElement("crtStrengthSlider");
-    const crtValue = this.getElement("crtStrengthValue");
     
     // Load from localStorage or use defaults
     const settings = JSON.parse(localStorage.getItem("bountyIdle_settings") || "{}");
     
     fontSelect.value = settings.fontMode || "retro";
-    crtSlider.value = settings.crtStrength || 50;
-    crtValue.textContent = `${crtSlider.value}%`;
     
     // Apply current settings
     this.updateFontMode(fontSelect.value);
-    this.updateCrtStrength(crtSlider.value);
     
     // Load individual CRT settings
     if (settings.crtSettings) {
@@ -725,194 +715,95 @@ class GameManager {
     document.documentElement.style.setProperty("--font-mode", mode);
   }
 
-  updateCrtStrength(strength) {
-    const crtValue = this.getElement("crtStrengthValue");
-    crtValue.textContent = `${strength}%`;
-    
-    // Update main CRT strength variable
-    document.documentElement.style.setProperty("--crt-strength", strength);
-    
-    // Update all CRT effects
-    this.updateCrtEffects(strength);
-  }
-
-  updateCrtEffects(strength) {
-    const intensity = strength / 100;
-    
-    // Update brightness, contrast, and saturation
-    const brightness = 1.0 + (intensity * 0.2); // 1.0-1.2
-    const contrast = 1.0 + (intensity * 0.4); // 1.0-1.4
-    const saturation = 1.0 + (intensity * 0.2); // 1.0-1.2
-    
-    document.documentElement.style.setProperty("--crt-brightness", brightness);
-    document.documentElement.style.setProperty("--crt-contrast", contrast);
-    document.documentElement.style.setProperty("--crt-saturation", saturation);
-    
-    // Update scanline opacity
-    const scanlineOpacity = 0.05 + (intensity * 0.2); // 0.05-0.25
-    document.documentElement.style.setProperty("--crt-scanline-opacity", scanlineOpacity);
-    
-    // Update glow intensity
-    const glowIntensity = 0.5 + (intensity * 0.5); // 0.5-1.0
-    document.documentElement.style.setProperty("--crt-glow-intensity", glowIntensity);
-    
-    // Update curvature and bulge
-    const curvature = 0.1 + (intensity * 0.4); // 0.1-0.5
-    const bulge = 0.05 + (intensity * 0.25); // 0.05-0.3
-    document.documentElement.style.setProperty("--crt-curvature", curvature);
-    document.documentElement.style.setProperty("--crt-bulge", bulge);
-    
-    // Update vignette
-    const vignette = 0.2 + (intensity * 0.4); // 0.2-0.6
-    document.documentElement.style.setProperty("--crt-vignette", vignette);
-    
-    // Update noise
-    const noise = 0.01 + (intensity * 0.03); // 0.01-0.04
-    document.documentElement.style.setProperty("--crt-noise", noise);
-    
-    // Update flicker
-    const flicker = 0.02 + (intensity * 0.08); // 0.02-0.1
-    document.documentElement.style.setProperty("--crt-flicker", flicker);
-    
-    // Update blur
-    const blur = 0.2 + (intensity * 0.8); // 0.2-1.0px
-    document.documentElement.style.setProperty("--crt-blur", `${blur}px`);
-    
-    // Update chromatic aberration
-    const chromatic = 0.1 + (intensity * 0.4); // 0.1-0.5
-    document.documentElement.style.setProperty("--crt-chromatic", chromatic);
-    
-    // Apply CRT classes to UI elements based on strength
-    this.applyCrtClasses(intensity);
-  }
-
-  applyCrtClasses(intensity) {
-    const elements = document.querySelectorAll('.btn, .panel, .panel-title, .credits-value');
-    
-    elements.forEach(element => {
-      if (intensity > 0.3) {
-        element.classList.add('crt-text-glow');
-      } else {
-        element.classList.remove('crt-text-glow');
-      }
-      
-      if (element.classList.contains('btn')) {
-        if (intensity > 0.5) {
-          element.classList.add('crt-button');
-        } else {
-          element.classList.remove('crt-button');
-        }
-      }
-      
-      if (element.classList.contains('panel')) {
-        if (intensity > 0.4) {
-          element.classList.add('crt-panel');
-        } else {
-          element.classList.remove('crt-panel');
-        }
-      }
-    });
-  }
-
   // CRT Preset Functions
   applyCrtPreset(preset) {
     const presets = {
       subtle: {
-        brightness: 1.05,
-        contrast: 1.1,
-        saturation: 1.05,
-        scanlineOpacity: 0.08,
-        glowIntensity: 0.6,
-        curvature: 0.15,
-        bulge: 0.1,
-        vignette: 0.25,
-        noise: 0.015,
-        flicker: 0.03,
-        blur: 0.3,
-        chromatic: 0.15
+        brightness: 105,
+        contrast: 110,
+        saturation: 105,
+        scanlines: 8,
+        glow: 60,
+        curvature: 15,
+        bulge: 10,
+        vignette: 25,
+        noise: 15,
+        flicker: 30,
+        blur: 30,
+        chromatic: 15
       },
       classic: {
-        brightness: 1.1,
-        contrast: 1.2,
-        saturation: 1.1,
-        scanlineOpacity: 0.15,
-        glowIntensity: 0.8,
-        curvature: 0.3,
-        bulge: 0.2,
-        vignette: 0.4,
-        noise: 0.02,
-        flicker: 0.05,
-        blur: 0.5,
-        chromatic: 0.3
+        brightness: 110,
+        contrast: 120,
+        saturation: 110,
+        scanlines: 15,
+        glow: 80,
+        curvature: 30,
+        bulge: 20,
+        vignette: 40,
+        noise: 20,
+        flicker: 50,
+        blur: 50,
+        chromatic: 30
       },
       intense: {
-        brightness: 1.15,
-        contrast: 1.3,
-        saturation: 1.15,
-        scanlineOpacity: 0.25,
-        glowIntensity: 1.0,
-        curvature: 0.5,
-        bulge: 0.3,
-        vignette: 0.6,
-        noise: 0.04,
-        flicker: 0.1,
-        blur: 1.0,
-        chromatic: 0.5
+        brightness: 115,
+        contrast: 130,
+        saturation: 115,
+        scanlines: 25,
+        glow: 100,
+        curvature: 50,
+        bulge: 30,
+        vignette: 60,
+        noise: 40,
+        flicker: 70,
+        blur: 70,
+        chromatic: 50
       },
       authentic: {
-        brightness: 1.2,
-        contrast: 1.4,
-        saturation: 1.2,
-        scanlineOpacity: 0.3,
-        glowIntensity: 1.2,
-        curvature: 0.6,
-        bulge: 0.4,
-        vignette: 0.7,
-        noise: 0.05,
-        flicker: 0.15,
-        blur: 1.5,
-        chromatic: 0.6
+        brightness: 120,
+        contrast: 140,
+        saturation: 120,
+        scanlines: 30,
+        glow: 120,
+        curvature: 60,
+        bulge: 40,
+        vignette: 70,
+        noise: 50,
+        flicker: 80,
+        blur: 80,
+        chromatic: 60
       }
     };
     
     const selectedPreset = presets[preset];
     if (!selectedPreset) return;
     
-    // Apply preset values
-    Object.entries(selectedPreset).forEach(([key, value]) => {
-      const cssVar = `--crt-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-      if (key === 'blur') {
-        document.documentElement.style.setProperty(cssVar, `${value}px`);
-      } else {
-        document.documentElement.style.setProperty(cssVar, value);
+    // Apply preset values to sliders
+    Object.entries(selectedPreset).forEach(([effect, value]) => {
+      const slider = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Slider`);
+      const valueDisplay = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Value`);
+      
+      if (slider && valueDisplay) {
+        slider.value = value;
+        valueDisplay.textContent = `${value}%`;
+        this.updateIndividualCrtEffect(effect, value, { unit: '%' });
       }
     });
-    
-    // Update slider to reflect preset
-    const crtSlider = this.getElement("crtStrengthSlider");
-    const presetStrengths = { subtle: 25, classic: 50, intense: 75, authentic: 100 };
-    crtSlider.value = presetStrengths[preset];
-    this.getElement("crtStrengthValue").textContent = `${presetStrengths[preset]}%`;
-    
-    // Apply CRT classes
-    this.applyCrtClasses(presetStrengths[preset] / 100);
     
     this.showToast(`Applied ${preset} CRT preset!`, "settings");
   }
 
   applySettings() {
     const fontSelect = this.getElement("fontSelect");
-    const crtSlider = this.getElement("crtStrengthSlider");
     
     const settings = {
-      fontMode: fontSelect.value,
-      crtStrength: parseInt(crtSlider.value)
+      fontMode: fontSelect.value
     };
     
     localStorage.setItem("bountyIdle_settings", JSON.stringify(settings));
     
     this.updateFontMode(settings.fontMode);
-    this.updateCrtStrength(settings.crtStrength);
     
     this.showToast("Settings applied!", "settings");
     this.closeSettingsMenu();
@@ -920,13 +811,10 @@ class GameManager {
 
   resetSettings() {
     const fontSelect = this.getElement("fontSelect");
-    const crtSlider = this.getElement("crtStrengthSlider");
     
     fontSelect.value = "retro";
-    crtSlider.value = 50;
     
     this.updateFontMode("retro");
-    this.updateCrtStrength(50);
     
     // Reset individual CRT settings
     this.resetCrtEffects();
@@ -1308,9 +1196,9 @@ GameManager.prototype.initCrtPowerOn = function() {
   // Setup individual CRT effect sliders
   GameManager.prototype.setupCrtSliders = function() {
     const crtSliders = {
-      brightness: { min: 80, max: 120, default: 110, unit: '%' },
-      contrast: { min: 80, max: 140, default: 120, unit: '%' },
-      saturation: { min: 80, max: 120, default: 110, unit: '%' },
+      brightness: { min: 50, max: 150, default: 110, unit: '%' },
+      contrast: { min: 50, max: 200, default: 120, unit: '%' },
+      saturation: { min: 50, max: 150, default: 110, unit: '%' },
       curvature: { min: 0, max: 100, default: 30, unit: '%' },
       bulge: { min: 0, max: 100, default: 20, unit: '%' },
       scanlines: { min: 0, max: 100, default: 15, unit: '%' },
@@ -1358,62 +1246,62 @@ GameManager.prototype.initCrtPowerOn = function() {
     
     switch (effect) {
       case 'brightness':
-        const brightness = 0.8 + (normalizedValue * 0.4); // 0.8-1.2
+        const brightness = 0.5 + (normalizedValue * 1.0); // 0.5-1.5
         document.documentElement.style.setProperty("--crt-brightness", brightness);
         break;
         
       case 'contrast':
-        const contrast = 0.8 + (normalizedValue * 0.6); // 0.8-1.4
+        const contrast = 0.5 + (normalizedValue * 1.5); // 0.5-2.0
         document.documentElement.style.setProperty("--crt-contrast", contrast);
         break;
         
       case 'saturation':
-        const saturation = 0.8 + (normalizedValue * 0.4); // 0.8-1.2
+        const saturation = 0.5 + (normalizedValue * 1.0); // 0.5-1.5
         document.documentElement.style.setProperty("--crt-saturation", saturation);
         break;
         
       case 'curvature':
-        const curvature = normalizedValue * 0.6; // 0-0.6
+        const curvature = normalizedValue * 0.8; // 0-0.8
         document.documentElement.style.setProperty("--crt-curvature", curvature);
         break;
         
       case 'bulge':
-        const bulge = normalizedValue * 0.4; // 0-0.4
+        const bulge = normalizedValue * 0.5; // 0-0.5
         document.documentElement.style.setProperty("--crt-bulge", bulge);
         break;
         
       case 'scanlines':
-        const scanlineOpacity = normalizedValue * 0.3; // 0-0.3
+        const scanlineOpacity = normalizedValue * 0.4; // 0-0.4
         document.documentElement.style.setProperty("--crt-scanline-opacity", scanlineOpacity);
         break;
         
       case 'glow':
-        const glowIntensity = normalizedValue * 1.2; // 0-1.2
+        const glowIntensity = normalizedValue * 1.5; // 0-1.5
         document.documentElement.style.setProperty("--crt-glow-intensity", glowIntensity);
         break;
         
       case 'vignette':
-        const vignette = normalizedValue * 0.8; // 0-0.8
+        const vignette = normalizedValue * 1.0; // 0-1.0
         document.documentElement.style.setProperty("--crt-vignette", vignette);
         break;
         
       case 'noise':
-        const noise = normalizedValue * 0.06; // 0-0.06
+        const noise = normalizedValue * 0.1; // 0-0.1
         document.documentElement.style.setProperty("--crt-noise", noise);
         break;
         
       case 'flicker':
-        const flicker = normalizedValue * 0.2; // 0-0.2
+        const flicker = normalizedValue * 0.3; // 0-0.3
         document.documentElement.style.setProperty("--crt-flicker", flicker);
         break;
         
       case 'blur':
-        const blur = normalizedValue * 2; // 0-2px
+        const blur = normalizedValue * 3; // 0-3px
         document.documentElement.style.setProperty("--crt-blur", `${blur}px`);
         break;
         
       case 'chromatic':
-        const chromatic = normalizedValue * 0.8; // 0-0.8
+        const chromatic = normalizedValue * 1.0; // 0-1.0
         document.documentElement.style.setProperty("--crt-chromatic", chromatic);
         break;
     }
