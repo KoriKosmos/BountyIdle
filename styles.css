@@ -1,6 +1,6 @@
 /* CSS Variables for consistent theming */
 :root {
-  /* Colors - Sci-fi Space Bounty Hunter Theme */
+  /* Colors - Deep Space Monochrome + Single Neon */
   --bg-primary: #0a0a1a;
   --bg-secondary: #1a1a2e;
   --bg-tertiary: #16213e;
@@ -8,22 +8,30 @@
   --border-color: #2d3748;
   --border-light: #4a5568;
   
-  /* Text colors */
-  --text-primary: #e2e8f0;
-  --text-secondary: #a0aec0;
+  /* Text colors - Clean hierarchy */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
   --text-accent: #60a5fa;
   --text-muted: #64748b;
   
-  /* Accent colors - Neon/Sci-fi palette */
-  --accent-primary: #0099cc;
-  --accent-secondary: #7c3aed;
-  --accent-success: #10b981;
+  /* Tier 1: Core Actions - Brightest neon */
+  --accent-primary: #00b3e6;
+  --accent-primary-hover: #22d3ee;
+  --accent-success: #22c55e;
+  --accent-success-hover: #34d399;
+  
+  /* Tier 2: Progression - Muted neon */
+  --accent-secondary: #5b21b6;
+  --accent-secondary-hover: #7c3aed;
+  
+  /* Tier 3: Contextual - Subtle accents */
+  --accent-tertiary: #4a5568;
   --accent-danger: #ef4444;
   --accent-warning: #f59e0b;
   
-  /* Button colors */
+  /* Button colors - Unified around the neon */
   --btn-primary: var(--accent-primary);
-  --btn-primary-hover: #00b3e6;
+  --btn-primary-hover: var(--accent-primary-hover);
   --btn-secondary: var(--bg-tertiary);
   --btn-secondary-hover: #1e3a5f;
   --btn-disabled: #4a5568;
@@ -79,9 +87,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-primary);
   background-image: 
-    radial-gradient(circle at 20% 80%, rgba(0, 153, 204, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 20% 80%, rgba(0, 179, 230, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(91, 33, 182, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
@@ -442,29 +450,38 @@ body {
   transform: translateY(0);
 }
 
-/* Button variants with sci-fi effects */
+/* Tier 1: Core Actions - Hunt Button */
 .btn-primary {
-  background: var(--btn-primary);
+  background: var(--accent-primary);
   color: white;
-  border-color: var(--btn-primary);
-  box-shadow: 0 0 10px rgba(0, 153, 204, 0.2);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px rgba(0, 179, 230, 0.4);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-lg) var(--space-xl);
+  min-height: 56px;
+  border-radius: var(--radius-lg);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--btn-primary-hover);
-  border-color: var(--btn-primary-hover);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+  box-shadow: 0 0 25px rgba(0, 179, 230, 0.7);
+  transform: translateY(-3px);
 }
 
+/* Tier 3: Contextual - Secondary buttons */
 .btn-secondary {
-  background: var(--btn-secondary);
+  background: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--border-color);
+  box-shadow: none;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--btn-secondary-hover);
-  border-color: var(--border-light);
+  background: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 5px rgba(91, 33, 182, 0.2);
 }
 
 .btn-control {
@@ -474,10 +491,13 @@ body {
   font-size: var(--font-size-sm);
   padding: var(--space-sm) var(--space-md);
   min-height: 40px;
+  box-shadow: none;
 }
 
 .btn-control:hover:not(:disabled) {
   background: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+  box-shadow: 0 0 5px rgba(91, 33, 182, 0.2);
 }
 
 .btn-active {
@@ -493,8 +513,8 @@ body {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #e53e3e;
-  border-color: #e53e3e;
+  background: #dc2626;
+  border-color: #dc2626;
 }
 
 /* Button content */
@@ -522,21 +542,27 @@ body {
   border-radius: var(--radius-md);
 }
 
-/* Contract button styling */
+/* Tier 1: Core Actions - Contract Button */
 .btn-contract {
-  background: #10b981;
+  background: var(--accent-success);
   color: white;
-  border-color: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+  border-color: var(--accent-success);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-lg) var(--space-xl);
+  min-height: 56px;
+  border-radius: var(--radius-lg);
 }
 
 .btn-contract:hover:not(:disabled) {
-  background: #22c55e;
-  border-color: #22c55e;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+  background: var(--accent-success-hover);
+  border-color: var(--accent-success-hover);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.7);
+  transform: translateY(-3px);
 }
 
-/* Purchase buttons - unified styling for Crew and Upgrades */
+/* Tier 2: Progression - Purchase buttons (Crew & Upgrades) */
 .purchase-btn {
   width: 100%;
   justify-content: center;
@@ -544,18 +570,18 @@ body {
   padding: var(--space-md) var(--space-lg);
   min-height: 48px;
   border-width: 2px;
-  background: #7c3aed;
+  background: var(--accent-secondary);
   color: white;
-  border-color: #7c3aed;
+  border-color: var(--accent-secondary);
   transition: var(--transition-fast);
-  box-shadow: 0 0 10px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 8px rgba(91, 33, 182, 0.25);
 }
 
 .purchase-btn:hover:not(:disabled) {
-  background: #8b5cf6;
-  border-color: #8b5cf6;
+  background: var(--accent-secondary-hover);
+  border-color: var(--accent-secondary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
 }
 
 .purchase-btn:disabled {
@@ -695,7 +721,7 @@ body {
   background: var(--bg-secondary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
-  border-color: var(--accent-secondary);
+  border-color: var(--accent-primary);
 }
 
 .upgrade-section.maxed {
