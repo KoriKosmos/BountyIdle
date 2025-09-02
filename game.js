@@ -415,6 +415,12 @@ class GameManager {
 
     section.classList.remove("hidden");
     
+    // Hide the warning if contracts hint has been removed
+    const warningElement = section.querySelector('.warning-text');
+    if (warningElement && this.state.flags.contractsHintRemoved) {
+      warningElement.style.display = 'none';
+    }
+    
     const contract = this.contracts[this.state.currentContract];
     if (!contract) return;
 
