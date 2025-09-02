@@ -708,6 +708,36 @@ class GameManager {
     
     // Update CSS variable
     document.documentElement.style.setProperty("--crt-strength", strength);
+    
+    // Update CRT warping effects
+    this.updateCrtWarping(strength);
+  }
+
+  updateCrtWarping(strength) {
+    const crtScreen = this.getElement("crtScreen");
+    const crtCorners = this.getElement("crtCorners");
+    
+    if (!crtScreen || !crtCorners) return;
+    
+    // Calculate warping intensity based on strength
+    const intensity = strength / 100;
+    
+    // Update screen warping - much more conservative values
+    const screenRotation = 0.3 + (intensity * 0.4); // 0.3-0.7 degrees
+    const screenPerspective = 1500 + (intensity * 500); // 1500-2000px
+    
+    crtScreen.style.transform = `perspective(${screenPerspective}px) rotateX(${screenRotation}deg)`;
+    
+    // Update corner warping - much more conservative values
+    const cornerRotationX = 0.5 + (intensity * 0.5); // 0.5-1.0 degrees
+    const cornerRotationY = 0.3 + (intensity * 0.4); // 0.3-0.7 degrees
+    const cornerPerspective = 800 + (intensity * 400); // 800-1200px
+    
+    crtCorners.style.transform = `perspective(${cornerPerspective}px) rotateX(${cornerRotationX}deg) rotateY(${cornerRotationY}deg)`;
+    
+    // Keep opacity at 1 to avoid darkening
+    crtScreen.style.opacity = 1;
+    crtCorners.style.opacity = 1;
   }
 
   applySettings() {

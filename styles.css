@@ -127,6 +127,11 @@ body::before {
   z-index: 1000;
   animation: scanlines 0.1s linear infinite;
   opacity: calc(var(--crt-strength) / 100);
+  transform: perspective(2000px) rotateX(0.5deg);
+  border-radius: 10px;
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(0, 179, 230, calc(0.05 * var(--crt-strength) / 50));
 }
 
 /* CRT Vignette Effect */
@@ -146,12 +151,73 @@ body::after {
   pointer-events: none;
   z-index: 999;
   opacity: calc(var(--crt-strength) / 100);
+  border-radius: 10px;
+}
+
+/* CRT Screen Warping Container */
+.crt-screen::before {
+  content: '';
+  position: absolute;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  background: transparent;
+  transform: perspective(1000px) rotateX(1deg);
+  border-radius: 20px;
+}
+
+/* CRT Corner Warping */
+.crt-corners {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 997;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.crt-corners::before {
+  content: '';
+  position: absolute;
+  top: -2%;
+  left: -2%;
+  width: 104%;
+  height: 104%;
+  background: transparent;
+  transform: perspective(800px) rotateX(0.5deg) rotateY(0.3deg);
+  border-radius: 20px;
 }
 
 /* CRT Scanlines Animation */
 @keyframes scanlines {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(4px); }
+  0% { transform: translateY(0) perspective(1000px) rotateX(2deg); }
+  100% { transform: translateY(4px) perspective(1000px) rotateX(2deg); }
+}
+
+/* CRT Warping Animation */
+@keyframes crtWarp {
+  0% { transform: perspective(800px) rotateX(1deg) scale(1); }
+  50% { transform: perspective(800px) rotateX(1.2deg) scale(1.02); }
+  100% { transform: perspective(800px) rotateX(1deg) scale(1); }
+}
+
+.crt-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 998;
+  transform: perspective(1500px) rotateX(0.3deg);
+  transform-origin: center center;
+  border-radius: 15px;
+  overflow: hidden;
+  animation: crtWarp 12s ease-in-out infinite;
 }
 
 /* CRT Glow Effect for Text */
