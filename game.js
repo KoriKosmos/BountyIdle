@@ -660,6 +660,9 @@ class GameManager {
       });
     });
 
+    // Individual CRT effect sliders
+    this.setupCrtSliders();
+
     // Apply settings
     this.getElement("applySettingsBtn").addEventListener("click", () => {
       this.applySettings();
@@ -706,6 +709,11 @@ class GameManager {
     // Apply current settings
     this.updateFontMode(fontSelect.value);
     this.updateCrtStrength(crtSlider.value);
+    
+    // Load individual CRT settings
+    if (settings.crtSettings) {
+      this.loadCrtSettings(settings.crtSettings);
+    }
   }
 
   updateFontMode(mode) {
@@ -919,6 +927,9 @@ class GameManager {
     
     this.updateFontMode("retro");
     this.updateCrtStrength(50);
+    
+    // Reset individual CRT settings
+    this.resetCrtEffects();
     
     localStorage.removeItem("bountyIdle_settings");
     
@@ -1282,14 +1293,197 @@ GameManager.prototype.initCrtPowerOn = function() {
   }, 500);
 };
 
-// CRT Power Off Animation
-GameManager.prototype.powerOffCrt = function() {
-  const crtContainer = this.getElement("crtContainer");
-  if (!crtContainer) return;
-  
-  crtContainer.classList.add("crt-power-off");
-  
-  setTimeout(() => {
-    crtContainer.style.opacity = "0";
-  }, 1000);
-};
+  // CRT Power Off Animation
+  GameManager.prototype.powerOffCrt = function() {
+    const crtContainer = this.getElement("crtContainer");
+    if (!crtContainer) return;
+    
+    crtContainer.classList.add("crt-power-off");
+    
+    setTimeout(() => {
+      crtContainer.style.opacity = "0";
+    }, 1000);
+  };
+
+  // Setup individual CRT effect sliders
+  GameManager.prototype.setupCrtSliders = function() {
+    const crtSliders = {
+      brightness: { min: 80, max: 120, default: 110, unit: '%' },
+      contrast: { min: 80, max: 140, default: 120, unit: '%' },
+      saturation: { min: 80, max: 120, default: 110, unit: '%' },
+      curvature: { min: 0, max: 100, default: 30, unit: '%' },
+      bulge: { min: 0, max: 100, default: 20, unit: '%' },
+      scanlines: { min: 0, max: 100, default: 15, unit: '%' },
+      glow: { min: 0, max: 100, default: 80, unit: '%' },
+      vignette: { min: 0, max: 100, default: 40, unit: '%' },
+      noise: { min: 0, max: 100, default: 20, unit: '%' },
+      flicker: { min: 0, max: 100, default: 50, unit: '%' },
+      blur: { min: 0, max: 100, default: 50, unit: '%' },
+      chromatic: { min: 0, max: 100, default: 30, unit: '%' }
+    };
+
+    Object.entries(crtSliders).forEach(([effect, config]) => {
+      const slider = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Slider`);
+      const valueDisplay = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Value`);
+      
+      if (slider && valueDisplay) {
+        // Set slider attributes
+        slider.min = config.min;
+        slider.max = config.max;
+        slider.value = config.default;
+        valueDisplay.textContent = `${config.default}${config.unit}`;
+        
+        // Add event listener
+        slider.addEventListener('input', (e) => {
+          const value = parseInt(e.target.value);
+          valueDisplay.textContent = `${value}${config.unit}`;
+          this.updateIndividualCrtEffect(effect, value, config);
+        });
+      }
+    });
+
+    // CRT control buttons
+    this.getElement("resetCrtBtn").addEventListener("click", () => {
+      this.resetCrtEffects();
+    });
+
+    this.getElement("applyCrtBtn").addEventListener("click", () => {
+      this.applyCrtSettings();
+    });
+  };
+
+  // Update individual CRT effect
+  GameManager.prototype.updateIndividualCrtEffect = function(effect, value, config) {
+    const normalizedValue = value / 100; // Convert to 0-1 range
+    
+    switch (effect) {
+      case 'brightness':
+        const brightness = 0.8 + (normalizedValue * 0.4); // 0.8-1.2
+        document.documentElement.style.setProperty("--crt-brightness", brightness);
+        break;
+        
+      case 'contrast':
+        const contrast = 0.8 + (normalizedValue * 0.6); // 0.8-1.4
+        document.documentElement.style.setProperty("--crt-contrast", contrast);
+        break;
+        
+      case 'saturation':
+        const saturation = 0.8 + (normalizedValue * 0.4); // 0.8-1.2
+        document.documentElement.style.setProperty("--crt-saturation", saturation);
+        break;
+        
+      case 'curvature':
+        const curvature = normalizedValue * 0.6; // 0-0.6
+        document.documentElement.style.setProperty("--crt-curvature", curvature);
+        break;
+        
+      case 'bulge':
+        const bulge = normalizedValue * 0.4; // 0-0.4
+        document.documentElement.style.setProperty("--crt-bulge", bulge);
+        break;
+        
+      case 'scanlines':
+        const scanlineOpacity = normalizedValue * 0.3; // 0-0.3
+        document.documentElement.style.setProperty("--crt-scanline-opacity", scanlineOpacity);
+        break;
+        
+      case 'glow':
+        const glowIntensity = normalizedValue * 1.2; // 0-1.2
+        document.documentElement.style.setProperty("--crt-glow-intensity", glowIntensity);
+        break;
+        
+      case 'vignette':
+        const vignette = normalizedValue * 0.8; // 0-0.8
+        document.documentElement.style.setProperty("--crt-vignette", vignette);
+        break;
+        
+      case 'noise':
+        const noise = normalizedValue * 0.06; // 0-0.06
+        document.documentElement.style.setProperty("--crt-noise", noise);
+        break;
+        
+      case 'flicker':
+        const flicker = normalizedValue * 0.2; // 0-0.2
+        document.documentElement.style.setProperty("--crt-flicker", flicker);
+        break;
+        
+      case 'blur':
+        const blur = normalizedValue * 2; // 0-2px
+        document.documentElement.style.setProperty("--crt-blur", `${blur}px`);
+        break;
+        
+      case 'chromatic':
+        const chromatic = normalizedValue * 0.8; // 0-0.8
+        document.documentElement.style.setProperty("--crt-chromatic", chromatic);
+        break;
+    }
+  };
+
+  // Reset CRT effects to defaults
+  GameManager.prototype.resetCrtEffects = function() {
+    const crtSliders = {
+      brightness: { default: 110, unit: '%' },
+      contrast: { default: 120, unit: '%' },
+      saturation: { default: 110, unit: '%' },
+      curvature: { default: 30, unit: '%' },
+      bulge: { default: 20, unit: '%' },
+      scanlines: { default: 15, unit: '%' },
+      glow: { default: 80, unit: '%' },
+      vignette: { default: 40, unit: '%' },
+      noise: { default: 20, unit: '%' },
+      flicker: { default: 50, unit: '%' },
+      blur: { default: 50, unit: '%' },
+      chromatic: { default: 30, unit: '%' }
+    };
+
+    Object.entries(crtSliders).forEach(([effect, config]) => {
+      const slider = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Slider`);
+      const valueDisplay = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Value`);
+      
+      if (slider && valueDisplay) {
+        slider.value = config.default;
+        valueDisplay.textContent = `${config.default}${config.unit}`;
+        this.updateIndividualCrtEffect(effect, config.default, config);
+      }
+    });
+
+    this.showToast("CRT effects reset to defaults!", "settings");
+  };
+
+  // Apply CRT settings and save
+  GameManager.prototype.applyCrtSettings = function() {
+    const crtSettings = {};
+    
+    const crtSliders = ['brightness', 'contrast', 'saturation', 'curvature', 'bulge', 'scanlines', 'glow', 'vignette', 'noise', 'flicker', 'blur', 'chromatic'];
+    
+    crtSliders.forEach(effect => {
+      const slider = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Slider`);
+      if (slider) {
+        crtSettings[effect] = parseInt(slider.value);
+      }
+    });
+
+    // Save CRT settings
+    const currentSettings = JSON.parse(localStorage.getItem("bountyIdle_settings") || "{}");
+    currentSettings.crtSettings = crtSettings;
+    localStorage.setItem("bountyIdle_settings", JSON.stringify(currentSettings));
+
+    this.showToast("CRT settings applied and saved!", "settings");
+  };
+
+  // Load CRT settings from saved data
+  GameManager.prototype.loadCrtSettings = function(crtSettings) {
+    const crtSliders = ['brightness', 'contrast', 'saturation', 'curvature', 'bulge', 'scanlines', 'glow', 'vignette', 'noise', 'flicker', 'blur', 'chromatic'];
+    
+    crtSliders.forEach(effect => {
+      const slider = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Slider`);
+      const valueDisplay = this.getElement(`crt${effect.charAt(0).toUpperCase() + effect.slice(1)}Value`);
+      
+      if (slider && valueDisplay && crtSettings[effect] !== undefined) {
+        const value = crtSettings[effect];
+        slider.value = value;
+        valueDisplay.textContent = `${value}%`;
+        this.updateIndividualCrtEffect(effect, value, { unit: '%' });
+      }
+    });
+  };
