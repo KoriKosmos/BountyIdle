@@ -655,12 +655,8 @@ class GameManager {
       this.resetSettings();
     });
 
-    // Close on escape key
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        this.closeSettingsMenu();
-      }
-    });
+    // Note: Escape key handling is now managed by the dev menu setupDevMenuEvents()
+    // to avoid conflicts between multiple event listeners
   }
 
   openSettingsMenu() {
@@ -735,9 +731,10 @@ class GameManager {
     
     crtCorners.style.transform = `perspective(${cornerPerspective}px) rotateX(${cornerRotationX}deg) rotateY(${cornerRotationY}deg)`;
     
-    // Keep opacity at 1 to avoid darkening
-    crtScreen.style.opacity = 1;
-    crtCorners.style.opacity = 1;
+    // Remove hardcoded opacity to allow CSS calculations to work properly
+    // The CSS already handles opacity based on --crt-strength variable
+    crtScreen.style.removeProperty('opacity');
+    crtCorners.style.removeProperty('opacity');
   }
 
   applySettings() {
@@ -967,11 +964,18 @@ GameManager.prototype.setupDevMenuEvents = function() {
       koriBuffer = ''; // Reset buffer after opening
     }
     
-    // ESC key to close dev menu
+    // ESC key to close dev menu or settings menu
     if (e.key === 'Escape') {
       const devPanel = this.getElement("devMenuPanel");
+      const settingsPanel = this.getElement("settingsMenuPanel");
+      
+      // Close dev menu if open
       if (devPanel && !devPanel.classList.contains('hidden')) {
         this.toggleDevMenu();
+      }
+      // Close settings menu if open
+      else if (settingsPanel && !settingsPanel.classList.contains('hidden')) {
+        this.closeSettingsMenu();
       }
     }
   });
