@@ -710,6 +710,12 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.contract-progress p {
+  margin-bottom: var(--space-md);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .progress-bar {
   width: 100%;
   height: 8px;
