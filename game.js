@@ -194,7 +194,17 @@ class GameManager {
       
       const base = cd.baseMs || CONFIG.BASE_COOLDOWN_MS;
       const oldMs = cd.ms || base;
-      const newMs = linearFactor === 0 ? 0 : Math.max(100, Math.round(base * linearFactor));
+      
+      // Calculate new cooldown time
+      let newMs;
+      if (linearFactor === 0) {
+        // At max upgrades, cooldown becomes instant (0ms)
+        newMs = 0;
+      } else {
+        // Apply reduction with minimum of 100ms
+        newMs = Math.max(100, Math.round(base * linearFactor));
+      }
+      
       cd.ms = newMs;
       
       if (cd.readyAt && cd.readyAt > now) {
@@ -235,7 +245,9 @@ class GameManager {
 
   // Snitch autoclicker
   updateSnitchAutoclicker() {
-    const snitch = this.crewTypes[1];
+    const snitch = this.crewTypes.find(c => c.id === 'snitch');
+    if (!snitch) return;
+    
     if (this.snitchTimer) {
       clearInterval(this.snitchTimer);
       this.snitchTimer = null;
@@ -375,8 +387,8 @@ class GameManager {
 
       let extra = "";
       if (upgrade.id === 'reduceCooldown') {
-        const net = Math.min(100, 5 * count);
-        extra = ` <span class="text-accent">• Net: ${net}%</span>`;
+        const reductionPercent = Math.min(100, 5 * count);
+        extra = ` <span class="text-accent">• Net: ${reductionPercent}% reduction</span>`;
       }
 
       html += `
