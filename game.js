@@ -336,7 +336,7 @@ class GameManager {
             </div>
           </div>
           <div class="crew-actions">
-            <button class="${['btn', 'crew-btn', !canAfford ? 'unavailable' : ''].filter(Boolean).join(' ')}" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
+            <button class="btn purchase-btn" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
               Hire ${crew.name}
             </button>
             <div class="crew-cost">
@@ -386,7 +386,7 @@ class GameManager {
             <span class="upgrade-cost">${isMaxed ? '' : `Cost: ${cost}`}</span>
           </div>
           <div class="upgrade-description">${upgrade.description}${extra}</div>
-          <button class="btn btn-secondary" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
+          <button class="btn purchase-btn" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
             ${isMaxed ? 'Maxed' : 'Purchase'}
           </button>
         </div>
@@ -428,7 +428,7 @@ class GameManager {
       container.innerHTML = `
         <div class="contract-progress">
           <p>${contract.description}</p>
-          <button class="btn btn-primary" id="takeContractBtn">Take Contract</button>
+          <button class="btn btn-contract" id="takeContractBtn">Take Contract</button>
         </div>
       `;
     } else {

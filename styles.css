@@ -503,6 +503,53 @@ body {
   border-radius: var(--radius-md);
 }
 
+/* Contract button styling */
+.btn-contract {
+  background: #38a169;
+  color: white;
+  border-color: #38a169;
+}
+
+.btn-contract:hover:not(:disabled) {
+  background: #2f855a;
+  border-color: #2f855a;
+}
+
+/* Purchase buttons - unified styling for Crew and Upgrades */
+.purchase-btn {
+  width: 100%;
+  justify-content: center;
+  font-weight: 600;
+  padding: var(--space-md) var(--space-lg);
+  min-height: 48px;
+  border-width: 2px;
+  background: #3182ce;
+  color: white;
+  border-color: #3182ce;
+  transition: var(--transition-fast);
+}
+
+.purchase-btn:hover:not(:disabled) {
+  background: #2c5aa0;
+  border-color: #2c5aa0;
+  transform: translateY(-2px);
+}
+
+.purchase-btn:disabled {
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.purchase-btn:disabled:hover {
+  transform: none !important;
+  background: var(--bg-quaternary, #2a2a2a) !important;
+  border-color: var(--border-muted, #555) !important;
+}
+
 /* Crew sections */
 .crew-section {
   background: var(--bg-tertiary);
@@ -513,21 +560,6 @@ body {
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
-}
-
-.crew-btn.unavailable {
-  opacity: 0.6;
-  filter: grayscale(0.3);
-  background: var(--bg-quaternary, #2a2a2a) !important;
-  border-color: var(--border-muted, #555) !important;
-  color: var(--text-muted) !important;
-  cursor: not-allowed;
-}
-
-.crew-btn.unavailable:hover {
-  transform: none !important;
-  background: var(--bg-quaternary, #2a2a2a) !important;
-  border-color: var(--border-muted, #555) !important;
 }
 
 .crew-section:last-child {
@@ -594,15 +626,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-}
-
-.crew-btn {
-  width: 100%;
-  justify-content: center;
-  font-weight: 600;
-  padding: var(--space-md) var(--space-lg);
-  min-height: 48px;
-  border-width: 2px;
 }
 
 .crew-cost {
