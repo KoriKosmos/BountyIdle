@@ -107,120 +107,7 @@ body {
   position: relative;
 }
 
-/* CRT Screen Effect - Inspired by CRT shader effects */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 2px,
-      rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 4px
-    );
-  pointer-events: none;
-  z-index: 1000;
-  animation: scanlines 0.1s linear infinite;
-  opacity: calc(var(--crt-strength) / 100);
-  transform: perspective(2000px) rotateX(0.5deg);
-  border-radius: 10px;
-  box-shadow: 
-    inset 0 0 20px rgba(0, 0, 0, 0.3),
-    0 0 30px rgba(0, 179, 230, calc(0.05 * var(--crt-strength) / 50));
-}
-
-/* CRT Vignette Effect */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    transparent 40%,
-    rgba(0, 0, 0, calc(0.3 * var(--crt-strength) / 50)) 100%
-  );
-  pointer-events: none;
-  z-index: 999;
-  opacity: calc(var(--crt-strength) / 100);
-  border-radius: 10px;
-}
-
-/* CRT Screen Warping Container */
-.crt-screen::before {
-  content: '';
-  position: absolute;
-  top: -5%;
-  left: -5%;
-  width: 110%;
-  height: 110%;
-  background: transparent;
-  transform: perspective(1000px) rotateX(1deg);
-  border-radius: 20px;
-}
-
-/* CRT Corner Warping */
-.crt-corners {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 997;
-  border-radius: 15px;
-  overflow: hidden;
-}
-
-.crt-corners::before {
-  content: '';
-  position: absolute;
-  top: -2%;
-  left: -2%;
-  width: 104%;
-  height: 104%;
-  background: transparent;
-  transform: perspective(800px) rotateX(0.5deg) rotateY(0.3deg);
-  border-radius: 20px;
-}
-
-/* CRT Scanlines Animation */
-@keyframes scanlines {
-  0% { transform: translateY(0) perspective(1000px) rotateX(2deg); }
-  100% { transform: translateY(4px) perspective(1000px) rotateX(2deg); }
-}
-
-/* CRT Warping Animation */
-@keyframes crtWarp {
-  0% { transform: perspective(800px) rotateX(1deg) scale(1); }
-  50% { transform: perspective(800px) rotateX(1.2deg) scale(1.02); }
-  100% { transform: perspective(800px) rotateX(1deg) scale(1); }
-}
-
-.crt-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 998;
-  transform: perspective(1500px) rotateX(0.3deg);
-  transform-origin: center center;
-  border-radius: 15px;
-  overflow: hidden;
-  animation: crtWarp 12s ease-in-out infinite;
-}
-
-/* CRT Glow Effect for Text */
+/* CRT Glow Effect for Text - Legacy class for compatibility */
 .crt-glow {
   text-shadow: 
     0 0 5px currentColor,
@@ -1510,4 +1397,536 @@ body::after {
     border: 1px solid #000;
     box-shadow: none;
   }
+}
+
+/* CRT Effect Variables */
+:root {
+  --crt-strength: 50;
+  --crt-brightness: 1.1;
+  --crt-contrast: 1.2;
+  --crt-saturation: 1.1;
+  --crt-scanline-opacity: 0.15;
+  --crt-glow-intensity: 0.8;
+  --crt-curvature: 0.3;
+  --crt-bulge: 0.2;
+  --crt-vignette: 0.4;
+  --crt-noise: 0.02;
+  --crt-flicker: 0.05;
+  --crt-blur: 0.5px;
+  --crt-chromatic: 0.3;
+}
+
+/* Main CRT Container - Creates the curved screen effect */
+.crt-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 2000px;
+}
+
+/* CRT Screen Surface - The main curved display */
+.crt-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border-radius: 8% / 4%;
+  transform: 
+    perspective(2000px) 
+    rotateX(calc(var(--crt-curvature) * 2deg))
+    scale(calc(1 + var(--crt-bulge) * 0.1))
+    translateZ(calc(var(--crt-bulge) * 20px));
+  transform-origin: center center;
+  box-shadow: 
+    inset 0 0 50px rgba(0, 0, 0, 0.8),
+    inset 0 0 100px rgba(0, 0, 0, 0.4),
+    0 0 100px rgba(0, 179, 230, calc(0.1 * var(--crt-strength) / 50)),
+    0 0 200px rgba(0, 179, 230, calc(0.05 * var(--crt-strength) / 50));
+  filter: 
+    brightness(calc(var(--crt-brightness) * var(--crt-strength) / 50))
+    contrast(calc(var(--crt-contrast) * var(--crt-strength) / 50))
+    saturate(calc(var(--crt-saturation) * var(--crt-strength) / 50))
+    blur(calc(var(--crt-blur) * var(--crt-strength) / 50));
+  opacity: calc(var(--crt-strength) / 100);
+  animation: crtFlicker 0.1s ease-in-out infinite;
+}
+
+/* CRT Scanlines - Horizontal lines that move */
+.crt-scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, calc(var(--crt-scanline-opacity) * var(--crt-strength) / 50)) 1px,
+      rgba(0, 0, 0, calc(var(--crt-scanline-opacity) * var(--crt-strength) / 50)) 2px
+    );
+  border-radius: 8% / 4%;
+  animation: scanlinesMove 0.1s linear infinite;
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+}
+
+/* CRT Vignette - Darkening around edges */
+.crt-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      transparent 30%,
+      rgba(0, 0, 0, calc(var(--crt-vignette) * var(--crt-strength) / 50)) 60%,
+      rgba(0, 0, 0, calc(var(--crt-vignette) * 1.5 * var(--crt-strength) / 50)) 100%
+    );
+  border-radius: 8% / 4%;
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+}
+
+/* CRT Noise - Subtle static effect */
+.crt-noise {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 0%, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 1px);
+  background-size: 3px 3px, 2px 2px, 1px 1px;
+  border-radius: 8% / 4%;
+  opacity: calc(var(--crt-noise) * var(--crt-strength) / 50);
+  animation: noiseFlicker 0.05s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* CRT Glow - Phosphor glow effect */
+.crt-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 179, 230, calc(0.02 * var(--crt-glow-intensity) * var(--crt-strength) / 50)) 0%,
+      transparent 50%
+    );
+  border-radius: 8% / 4%;
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* CRT Chromatic Aberration - Color separation effect */
+.crt-chromatic {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8% / 4%;
+  opacity: calc(var(--crt-chromatic) * var(--crt-strength) / 50);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.crt-chromatic::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--crt-chromatic) * 2px);
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(
+      ellipse at center,
+      rgba(255, 0, 0, 0.1) 0%,
+      transparent 50%
+    );
+  border-radius: 8% / 4%;
+}
+
+.crt-chromatic::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--crt-chromatic) * -2px);
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 255, 0.1) 0%,
+      transparent 50%
+    );
+  border-radius: 8% / 4%;
+}
+
+/* CRT Screen Warping - Dynamic distortion */
+.crt-warp {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8% / 4%;
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+  animation: crtWarp 8s ease-in-out infinite;
+}
+
+/* CRT Corner Distortion - Realistic corner warping */
+.crt-corners {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8% / 4%;
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+  transform: 
+    perspective(1500px) 
+    rotateX(calc(var(--crt-curvature) * 1deg))
+    rotateY(calc(var(--crt-curvature) * 0.5deg));
+  transform-origin: center center;
+}
+
+/* CRT Animations */
+@keyframes scanlinesMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+@keyframes crtFlicker {
+  0%, 100% { opacity: calc(var(--crt-strength) / 100); }
+  50% { opacity: calc((var(--crt-strength) / 100) * (1 - var(--crt-flicker))); }
+}
+
+@keyframes noiseFlicker {
+  0%, 100% { opacity: calc(var(--crt-noise) * var(--crt-strength) / 50); }
+  50% { opacity: calc(var(--crt-noise) * var(--crt-strength) / 50 * 0.8); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: calc(var(--crt-strength) / 100); }
+  50% { opacity: calc((var(--crt-strength) / 100) * 1.2); }
+}
+
+@keyframes crtWarp {
+  0%, 100% { 
+    transform: 
+      perspective(2000px) 
+      rotateX(calc(var(--crt-curvature) * 2deg))
+      scale(calc(1 + var(--crt-bulge) * 0.1))
+      translateZ(calc(var(--crt-bulge) * 20px));
+  }
+  25% { 
+    transform: 
+      perspective(2000px) 
+      rotateX(calc(var(--crt-curvature) * 2.2deg))
+      scale(calc(1 + var(--crt-bulge) * 0.12))
+      translateZ(calc(var(--crt-bulge) * 22px));
+  }
+  50% { 
+    transform: 
+      perspective(2000px) 
+      rotateX(calc(var(--crt-curvature) * 1.8deg))
+      scale(calc(1 + var(--crt-bulge) * 0.08))
+      translateZ(calc(var(--crt-bulge) * 18px));
+  }
+  75% { 
+    transform: 
+      perspective(2000px) 
+      rotateX(calc(var(--crt-curvature) * 2.1deg))
+      scale(calc(1 + var(--crt-bulge) * 0.11))
+      translateZ(calc(var(--crt-bulge) * 21px));
+  }
+}
+
+/* CRT Text Glow Effect */
+.crt-text-glow {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor,
+    0 0 25px currentColor;
+  animation: textGlow 3s ease-in-out infinite;
+}
+
+@keyframes textGlow {
+  0%, 100% { 
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor,
+      0 0 25px currentColor;
+  }
+  50% { 
+    text-shadow: 
+      0 0 8px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor,
+      0 0 25px currentColor,
+      0 0 30px currentColor;
+  }
+}
+
+/* CRT Button Effects */
+.crt-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.crt-button:hover::before {
+  left: 100%;
+}
+
+/* CRT Panel Effects */
+.crt-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(0, 179, 230, 0.05) 50%,
+      transparent 70%
+    );
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+}
+
+/* CRT Screen Border */
+.crt-border {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  border: 2px solid rgba(0, 179, 230, calc(0.3 * var(--crt-strength) / 50));
+  border-radius: 10% / 5%;
+  box-shadow: 
+    0 0 20px rgba(0, 179, 230, calc(0.2 * var(--crt-strength) / 50)),
+    inset 0 0 20px rgba(0, 179, 230, calc(0.1 * var(--crt-strength) / 50));
+  opacity: calc(var(--crt-strength) / 100);
+  pointer-events: none;
+}
+
+/* CRT Power On/Off Animation */
+.crt-power-on {
+  animation: crtPowerOn 2s ease-out forwards;
+}
+
+@keyframes crtPowerOn {
+  0% { 
+    opacity: 0;
+    transform: scale(0.8) perspective(2000px) rotateX(10deg);
+  }
+  50% { 
+    opacity: 0.5;
+    transform: scale(1.1) perspective(2000px) rotateX(5deg);
+  }
+  100% { 
+    opacity: calc(var(--crt-strength) / 100);
+    transform: scale(1) perspective(2000px) rotateX(calc(var(--crt-curvature) * 2deg));
+  }
+}
+
+/* CRT Power Off Animation */
+.crt-power-off {
+  animation: crtPowerOff 1s ease-in forwards;
+}
+
+@keyframes crtPowerOff {
+  0% { 
+    opacity: calc(var(--crt-strength) / 100);
+    transform: scale(1) perspective(2000px) rotateX(calc(var(--crt-curvature) * 2deg));
+  }
+  100% { 
+    opacity: 0;
+    transform: scale(0.8) perspective(2000px) rotateX(10deg);
+  }
+}
+
+/* CRT Settings Panel Styles */
+.crt-settings {
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid rgba(0, 179, 230, 0.5);
+  border-radius: 10px;
+  box-shadow: 
+    0 0 20px rgba(0, 179, 230, 0.3),
+    inset 0 0 20px rgba(0, 179, 230, 0.1);
+}
+
+.crt-settings .setting-group {
+  border-bottom: 1px solid rgba(0, 179, 230, 0.3);
+  padding: 15px 0;
+}
+
+.crt-settings .setting-group:last-child {
+  border-bottom: none;
+}
+
+.crt-settings .setting-label {
+  color: #00b3e6;
+  font-weight: bold;
+  text-shadow: 0 0 5px #00b3e6;
+  margin-bottom: 10px;
+}
+
+.crt-settings .setting-slider {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 179, 230, 0.2);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.crt-settings .setting-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #00b3e6;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00b3e6;
+  cursor: pointer;
+}
+
+.crt-settings .setting-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #00b3e6;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00b3e6;
+  cursor: pointer;
+  border: none;
+}
+
+.crt-settings .slider-value {
+  color: #00b3e6;
+  font-weight: bold;
+  text-shadow: 0 0 5px #00b3e6;
+  margin-left: 10px;
+}
+
+/* CRT Preset Buttons Layout */
+.crt-preset-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* CRT Preset Buttons */
+.crt-preset {
+  background: rgba(0, 179, 230, 0.2);
+  border: 1px solid rgba(0, 179, 230, 0.5);
+  color: #00b3e6;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 5px #00b3e6;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.crt-preset:hover {
+  background: rgba(0, 179, 230, 0.4);
+  box-shadow: 0 0 15px rgba(0, 179, 230, 0.5);
+  transform: translateY(-1px);
+}
+
+.crt-preset.active {
+  background: rgba(0, 179, 230, 0.6);
+  box-shadow: 0 0 20px rgba(0, 179, 230, 0.7);
+  transform: translateY(-2px);
+}
+
+/* Responsive CRT Effects */
+@media (max-width: 768px) {
+  .crt-screen {
+    border-radius: 5% / 2%;
+  }
+  
+  .crt-scanlines,
+  .crt-vignette,
+  .crt-noise,
+  .crt-glow,
+  .crt-chromatic,
+  .crt-warp,
+  .crt-corners {
+    border-radius: 5% / 2%;
+  }
+  
+  .crt-border {
+    border-radius: 7% / 3%;
+  }
+}
+
+/* CRT Performance Optimizations */
+.crt-container {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.crt-screen,
+.crt-scanlines,
+.crt-vignette,
+.crt-noise,
+.crt-glow,
+.crt-chromatic,
+.crt-warp,
+.crt-corners {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }

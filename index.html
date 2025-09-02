@@ -10,9 +10,18 @@
     <!-- Toast notifications -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- CRT Warping Effects -->
-    <div class="crt-screen" id="crtScreen"></div>
-    <div class="crt-corners" id="crtCorners"></div>
+    <!-- CRT Effects Container -->
+    <div class="crt-container" id="crtContainer">
+        <div class="crt-screen" id="crtScreen"></div>
+        <div class="crt-scanlines" id="crtScanlines"></div>
+        <div class="crt-vignette" id="crtVignette"></div>
+        <div class="crt-noise" id="crtNoise"></div>
+        <div class="crt-glow" id="crtGlow"></div>
+        <div class="crt-chromatic" id="crtChromatic"></div>
+        <div class="crt-warp" id="crtWarp"></div>
+        <div class="crt-corners" id="crtCorners"></div>
+        <div class="crt-border" id="crtBorder"></div>
+    </div>
 
     <!-- Main container -->
     <div class="app-container">
@@ -153,6 +162,15 @@
                             <div class="slider-container">
                                 <input type="range" id="crtStrengthSlider" class="setting-slider" min="0" max="100" value="50">
                                 <span class="slider-value" id="crtStrengthValue">50%</span>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label>CRT Presets:</label>
+                            <div class="crt-preset-buttons">
+                                <button class="crt-preset" data-preset="subtle">Subtle</button>
+                                <button class="crt-preset active" data-preset="classic">Classic</button>
+                                <button class="crt-preset" data-preset="intense">Intense</button>
+                                <button class="crt-preset" data-preset="authentic">Authentic</button>
                             </div>
                         </div>
                     </div>

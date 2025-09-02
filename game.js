@@ -120,6 +120,9 @@ class GameManager {
     this.applyUpgradeEffects();
     this.updateCooldownVisual();
     this.startAutosave();
+    
+    // Initialize CRT with power-on animation
+    this.initCrtPowerOn();
   }
 
   // Utility functions
@@ -645,6 +648,18 @@ class GameManager {
       this.updateCrtStrength(e.target.value);
     });
 
+    // CRT preset buttons
+    document.querySelectorAll('.crt-preset').forEach(button => {
+      button.addEventListener('click', (e) => {
+        // Remove active class from all buttons
+        document.querySelectorAll('.crt-preset').forEach(btn => btn.classList.remove('active'));
+        // Add active class to clicked button
+        e.target.classList.add('active');
+        // Apply the preset
+        this.applyCrtPreset(e.target.dataset.preset);
+      });
+    });
+
     // Apply settings
     this.getElement("applySettingsBtn").addEventListener("click", () => {
       this.applySettings();
@@ -706,38 +721,175 @@ class GameManager {
     const crtValue = this.getElement("crtStrengthValue");
     crtValue.textContent = `${strength}%`;
     
-    // Update CSS variable
+    // Update main CRT strength variable
     document.documentElement.style.setProperty("--crt-strength", strength);
     
-    // Update CRT warping effects
-    this.updateCrtWarping(strength);
+    // Update all CRT effects
+    this.updateCrtEffects(strength);
   }
 
-  updateCrtWarping(strength) {
-    const crtScreen = this.getElement("crtScreen");
-    const crtCorners = this.getElement("crtCorners");
-    
-    if (!crtScreen || !crtCorners) return;
-    
-    // Calculate warping intensity based on strength
+  updateCrtEffects(strength) {
     const intensity = strength / 100;
     
-    // Update screen warping - much more conservative values
-    const screenRotation = 0.3 + (intensity * 0.4); // 0.3-0.7 degrees
-    const screenPerspective = 1500 + (intensity * 500); // 1500-2000px
+    // Update brightness, contrast, and saturation
+    const brightness = 1.0 + (intensity * 0.2); // 1.0-1.2
+    const contrast = 1.0 + (intensity * 0.4); // 1.0-1.4
+    const saturation = 1.0 + (intensity * 0.2); // 1.0-1.2
     
-    crtScreen.style.transform = `perspective(${screenPerspective}px) rotateX(${screenRotation}deg)`;
+    document.documentElement.style.setProperty("--crt-brightness", brightness);
+    document.documentElement.style.setProperty("--crt-contrast", contrast);
+    document.documentElement.style.setProperty("--crt-saturation", saturation);
     
-    // Update corner warping - much more conservative values
-    const cornerRotationX = 0.5 + (intensity * 0.5); // 0.5-1.0 degrees
-    const cornerRotationY = 0.3 + (intensity * 0.4); // 0.3-0.7 degrees
-    const cornerPerspective = 800 + (intensity * 400); // 800-1200px
+    // Update scanline opacity
+    const scanlineOpacity = 0.05 + (intensity * 0.2); // 0.05-0.25
+    document.documentElement.style.setProperty("--crt-scanline-opacity", scanlineOpacity);
     
-    crtCorners.style.transform = `perspective(${cornerPerspective}px) rotateX(${cornerRotationX}deg) rotateY(${cornerRotationY}deg)`;
+    // Update glow intensity
+    const glowIntensity = 0.5 + (intensity * 0.5); // 0.5-1.0
+    document.documentElement.style.setProperty("--crt-glow-intensity", glowIntensity);
     
-    // Keep opacity at 1 to avoid darkening
-    crtScreen.style.opacity = 1;
-    crtCorners.style.opacity = 1;
+    // Update curvature and bulge
+    const curvature = 0.1 + (intensity * 0.4); // 0.1-0.5
+    const bulge = 0.05 + (intensity * 0.25); // 0.05-0.3
+    document.documentElement.style.setProperty("--crt-curvature", curvature);
+    document.documentElement.style.setProperty("--crt-bulge", bulge);
+    
+    // Update vignette
+    const vignette = 0.2 + (intensity * 0.4); // 0.2-0.6
+    document.documentElement.style.setProperty("--crt-vignette", vignette);
+    
+    // Update noise
+    const noise = 0.01 + (intensity * 0.03); // 0.01-0.04
+    document.documentElement.style.setProperty("--crt-noise", noise);
+    
+    // Update flicker
+    const flicker = 0.02 + (intensity * 0.08); // 0.02-0.1
+    document.documentElement.style.setProperty("--crt-flicker", flicker);
+    
+    // Update blur
+    const blur = 0.2 + (intensity * 0.8); // 0.2-1.0px
+    document.documentElement.style.setProperty("--crt-blur", `${blur}px`);
+    
+    // Update chromatic aberration
+    const chromatic = 0.1 + (intensity * 0.4); // 0.1-0.5
+    document.documentElement.style.setProperty("--crt-chromatic", chromatic);
+    
+    // Apply CRT classes to UI elements based on strength
+    this.applyCrtClasses(intensity);
+  }
+
+  applyCrtClasses(intensity) {
+    const elements = document.querySelectorAll('.btn, .panel, .panel-title, .credits-value');
+    
+    elements.forEach(element => {
+      if (intensity > 0.3) {
+        element.classList.add('crt-text-glow');
+      } else {
+        element.classList.remove('crt-text-glow');
+      }
+      
+      if (element.classList.contains('btn')) {
+        if (intensity > 0.5) {
+          element.classList.add('crt-button');
+        } else {
+          element.classList.remove('crt-button');
+        }
+      }
+      
+      if (element.classList.contains('panel')) {
+        if (intensity > 0.4) {
+          element.classList.add('crt-panel');
+        } else {
+          element.classList.remove('crt-panel');
+        }
+      }
+    });
+  }
+
+  // CRT Preset Functions
+  applyCrtPreset(preset) {
+    const presets = {
+      subtle: {
+        brightness: 1.05,
+        contrast: 1.1,
+        saturation: 1.05,
+        scanlineOpacity: 0.08,
+        glowIntensity: 0.6,
+        curvature: 0.15,
+        bulge: 0.1,
+        vignette: 0.25,
+        noise: 0.015,
+        flicker: 0.03,
+        blur: 0.3,
+        chromatic: 0.15
+      },
+      classic: {
+        brightness: 1.1,
+        contrast: 1.2,
+        saturation: 1.1,
+        scanlineOpacity: 0.15,
+        glowIntensity: 0.8,
+        curvature: 0.3,
+        bulge: 0.2,
+        vignette: 0.4,
+        noise: 0.02,
+        flicker: 0.05,
+        blur: 0.5,
+        chromatic: 0.3
+      },
+      intense: {
+        brightness: 1.15,
+        contrast: 1.3,
+        saturation: 1.15,
+        scanlineOpacity: 0.25,
+        glowIntensity: 1.0,
+        curvature: 0.5,
+        bulge: 0.3,
+        vignette: 0.6,
+        noise: 0.04,
+        flicker: 0.1,
+        blur: 1.0,
+        chromatic: 0.5
+      },
+      authentic: {
+        brightness: 1.2,
+        contrast: 1.4,
+        saturation: 1.2,
+        scanlineOpacity: 0.3,
+        glowIntensity: 1.2,
+        curvature: 0.6,
+        bulge: 0.4,
+        vignette: 0.7,
+        noise: 0.05,
+        flicker: 0.15,
+        blur: 1.5,
+        chromatic: 0.6
+      }
+    };
+    
+    const selectedPreset = presets[preset];
+    if (!selectedPreset) return;
+    
+    // Apply preset values
+    Object.entries(selectedPreset).forEach(([key, value]) => {
+      const cssVar = `--crt-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+      if (key === 'blur') {
+        document.documentElement.style.setProperty(cssVar, `${value}px`);
+      } else {
+        document.documentElement.style.setProperty(cssVar, value);
+      }
+    });
+    
+    // Update slider to reflect preset
+    const crtSlider = this.getElement("crtStrengthSlider");
+    const presetStrengths = { subtle: 25, classic: 50, intense: 75, authentic: 100 };
+    crtSlider.value = presetStrengths[preset];
+    this.getElement("crtStrengthValue").textContent = `${presetStrengths[preset]}%`;
+    
+    // Apply CRT classes
+    this.applyCrtClasses(presetStrengths[preset] / 100);
+    
+    this.showToast(`Applied ${preset} CRT preset!`, "settings");
   }
 
   applySettings() {
@@ -1106,4 +1258,38 @@ GameManager.prototype.handleDevAction = function(action) {
   
   this.updateUI();
   this.updateDevMenuInfo();
+};
+
+// CRT Power On Animation
+GameManager.prototype.initCrtPowerOn = function() {
+  const crtContainer = this.getElement("crtContainer");
+  if (!crtContainer) return;
+  
+  // Start with CRT off
+  crtContainer.style.opacity = "0";
+  crtContainer.classList.add("crt-power-off");
+  
+  // Power on after a short delay
+  setTimeout(() => {
+    crtContainer.classList.remove("crt-power-off");
+    crtContainer.classList.add("crt-power-on");
+    crtContainer.style.opacity = "";
+    
+    // Remove power-on class after animation completes
+    setTimeout(() => {
+      crtContainer.classList.remove("crt-power-on");
+    }, 2000);
+  }, 500);
+};
+
+// CRT Power Off Animation
+GameManager.prototype.powerOffCrt = function() {
+  const crtContainer = this.getElement("crtContainer");
+  if (!crtContainer) return;
+  
+  crtContainer.classList.add("crt-power-off");
+  
+  setTimeout(() => {
+    crtContainer.style.opacity = "0";
+  }, 1000);
 };
