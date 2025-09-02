@@ -336,7 +336,7 @@ class GameManager {
             </div>
           </div>
           <div class="crew-actions">
-            <button class="btn crew-btn ${!canAfford ? 'unavailable' : ''}" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
+            <button class="${['btn', 'crew-btn', !canAfford ? 'unavailable' : ''].filter(Boolean).join(' ')}" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
               Hire ${crew.name}
             </button>
             <div class="crew-cost">
