@@ -1,38 +1,38 @@
 /* CSS Variables for consistent theming */
 :root {
-  /* Colors */
-  --bg-primary: #0a0a0f;
+  /* Colors - Sci-fi Space Bounty Hunter Theme */
+  --bg-primary: #0a0a1a;
   --bg-secondary: #1a1a2e;
   --bg-tertiary: #16213e;
-  --bg-panel: #0f3460;
+  --bg-panel: #1e2a4a;
   --border-color: #2d3748;
   --border-light: #4a5568;
   
   /* Text colors */
-  --text-primary: #f7fafc;
+  --text-primary: #e2e8f0;
   --text-secondary: #a0aec0;
-  --text-accent: #90cdf4;
-  --text-muted: #718096;
+  --text-accent: #60a5fa;
+  --text-muted: #64748b;
   
-  /* Accent colors */
-  --accent-primary: #ff6b35;
-  --accent-secondary: #f7931e;
-  --accent-success: #48bb78;
-  --accent-danger: #f56565;
-  --accent-warning: #ed8936;
+  /* Accent colors - Neon/Sci-fi palette */
+  --accent-primary: #00d4ff;
+  --accent-secondary: #7c3aed;
+  --accent-success: #10b981;
+  --accent-danger: #ef4444;
+  --accent-warning: #f59e0b;
   
   /* Button colors */
   --btn-primary: var(--accent-primary);
-  --btn-primary-hover: #e55a2b;
+  --btn-primary-hover: #00b8e6;
   --btn-secondary: var(--bg-tertiary);
   --btn-secondary-hover: #1e3a5f;
   --btn-disabled: #4a5568;
   
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
   
   /* Border radius */
   --radius-sm: 6px;
@@ -78,6 +78,10 @@ html {
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
@@ -306,7 +310,7 @@ body {
   }
 }
 
-/* Panels */
+/* Sci-fi styling enhancements */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -314,11 +318,24 @@ body {
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   transition: var(--transition-normal);
+  position: relative;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  opacity: 0.7;
 }
 
 .panel:hover {
   box-shadow: var(--shadow-xl);
   transform: translateY(-2px);
+  border-color: var(--accent-primary);
 }
 
 .panel-header {
@@ -425,16 +442,18 @@ body {
   transform: translateY(0);
 }
 
-/* Button variants */
+/* Button variants with sci-fi effects */
 .btn-primary {
   background: var(--btn-primary);
   color: white;
   border-color: var(--btn-primary);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--btn-primary-hover);
   border-color: var(--btn-primary-hover);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
 }
 
 .btn-secondary {
@@ -505,14 +524,16 @@ body {
 
 /* Contract button styling */
 .btn-contract {
-  background: #38a169;
+  background: #10b981;
   color: white;
-  border-color: #38a169;
+  border-color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
 .btn-contract:hover:not(:disabled) {
-  background: #2f855a;
-  border-color: #2f855a;
+  background: #059669;
+  border-color: #059669;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
 }
 
 /* Purchase buttons - unified styling for Crew and Upgrades */
@@ -523,16 +544,18 @@ body {
   padding: var(--space-md) var(--space-lg);
   min-height: 48px;
   border-width: 2px;
-  background: #3182ce;
+  background: #7c3aed;
   color: white;
-  border-color: #3182ce;
+  border-color: #7c3aed;
   transition: var(--transition-fast);
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
 }
 
 .purchase-btn:hover:not(:disabled) {
-  background: #2c5aa0;
-  border-color: #2c5aa0;
+  background: #6d28d9;
+  border-color: #6d28d9;
   transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
 }
 
 .purchase-btn:disabled {
@@ -586,6 +609,7 @@ body {
   background: var(--bg-secondary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  border-color: var(--accent-primary);
 }
 
 .crew-header {
@@ -635,7 +659,7 @@ body {
   font-size: var(--font-size-sm);
 }
 
-/* Upgrade sections */
+/* Upgrade sections with sci-fi styling */
 .upgrade-section {
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
@@ -643,6 +667,24 @@ body {
   padding: var(--space-md);
   margin-bottom: var(--space-md);
   transition: var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.upgrade-section:hover::before {
+  opacity: 1;
 }
 
 .upgrade-section:last-child {
@@ -653,6 +695,7 @@ body {
   background: var(--bg-secondary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+  border-color: var(--accent-secondary);
 }
 
 .upgrade-section.maxed {
