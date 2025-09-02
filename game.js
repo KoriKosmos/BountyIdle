@@ -695,7 +695,7 @@ class GameManager {
 
   updateFontMode(mode) {
     const body = document.body;
-    body.classList.remove("font-retro", "font-system");
+    body.classList.remove("font-retro", "font-original");
     body.classList.add(`font-${mode}`);
     
     // Update CSS variable

@@ -168,10 +168,11 @@ body::after {
   font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.font-system {
+.font-original {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* Retro mode - Apply retro fonts to specific elements */
 .font-retro .app-title,
 .font-retro .panel-title,
 .font-retro .btn-primary,
@@ -192,24 +193,25 @@ body::after {
   font-family: 'Share Tech Mono', monospace;
 }
 
-.font-system .app-title,
-.font-system .panel-title,
-.font-system .btn-primary,
-.font-system .btn-contract,
-.font-system .crew-name,
-.font-system .upgrade-name {
-  font-family: inherit;
+/* Original mode - Use the original font stack exactly as specified */
+.font-original .app-title,
+.font-original .panel-title,
+.font-original .btn-primary,
+.font-original .btn-contract,
+.font-original .crew-name,
+.font-original .upgrade-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   letter-spacing: normal;
   text-transform: none;
 }
 
-.font-system .credits-value,
-.font-system .purchase-btn,
-.font-system .btn-value,
-.font-system .setting-item label,
-.font-system .setting-select,
-.font-system .slider-value {
-  font-family: inherit;
+.font-original .credits-value,
+.font-original .purchase-btn,
+.font-original .btn-value,
+.font-original .setting-item label,
+.font-original .setting-select,
+.font-original .slider-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Utility classes */
