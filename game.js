@@ -655,12 +655,8 @@ class GameManager {
       this.resetSettings();
     });
 
-    // Close on escape key
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        this.closeSettingsMenu();
-      }
-    });
+    // Note: Escape key handling is now managed by the dev menu setupDevMenuEvents()
+    // to avoid conflicts between multiple event listeners
   }
 
   openSettingsMenu() {
@@ -677,40 +673,109 @@ class GameManager {
   }
 
   loadSettings() {
-    const fontSelect = this.getElement("fontSelect");
-    const crtSlider = this.getElement("crtStrengthSlider");
-    const crtValue = this.getElement("crtStrengthValue");
-    
-    // Load from localStorage or use defaults
-    const settings = JSON.parse(localStorage.getItem("bountyIdle_settings") || "{}");
-    
-    fontSelect.value = settings.fontMode || "retro";
-    crtSlider.value = settings.crtStrength || 50;
-    crtValue.textContent = `${crtSlider.value}%`;
-    
-    // Apply current settings
-    this.updateFontMode(fontSelect.value);
-    this.updateCrtStrength(crtSlider.value);
+    try {
+      const fontSelect = this.getElement("fontSelect");
+      const crtSlider = this.getElement("crtStrengthSlider");
+      const crtValue = this.getElement("crtStrengthValue");
+      
+      // Check if required DOM elements exist
+      if (!fontSelect || !crtSlider || !crtValue) {
+        console.warn("Settings elements not found, using defaults");
+        this.applyDefaultSettings();
+        return;
+      }
+      
+      // Safely load from localStorage with error handling
+      let settings = {};
+      try {
+        const storedSettings = localStorage.getItem("bountyIdle_settings");
+        if (storedSettings) {
+          settings = JSON.parse(storedSettings);
+          // Validate settings object structure
+          if (typeof settings !== 'object' || settings === null) {
+            throw new Error("Invalid settings format");
+          }
+        }
+      } catch (parseError) {
+        console.warn("Failed to parse settings from localStorage:", parseError);
+        // Clear corrupted data
+        localStorage.removeItem("bountyIdle_settings");
+        settings = {};
+      }
+      
+      // Validate and set font mode with fallback
+      const fontMode = settings.fontMode;
+      const validFontModes = ["retro", "original"];
+      const safeFontMode = validFontModes.includes(fontMode) ? fontMode : "retro";
+      
+      // Validate and set CRT strength with fallback
+      const crtStrength = parseInt(settings.crtStrength);
+      const safeCrtStrength = (typeof crtStrength === 'number' && !isNaN(crtStrength) && crtStrength >= 0 && crtStrength <= 100) 
+        ? crtStrength : 50;
+      
+      // Apply safe values to DOM elements
+      fontSelect.value = safeFontMode;
+      crtSlider.value = safeCrtStrength;
+      crtValue.textContent = `${safeCrtStrength}%`;
+      
+      // Apply current settings
+      this.updateFontMode(safeFontMode);
+      this.updateCrtStrength(safeCrtStrength);
+      
+    } catch (error) {
+      console.error("Error loading settings:", error);
+      // Fallback to default settings
+      this.applyDefaultSettings();
+    }
+  }
+
+  applyDefaultSettings() {
+    try {
+      const fontSelect = this.getElement("fontSelect");
+      const crtSlider = this.getElement("crtStrengthSlider");
+      const crtValue = this.getElement("crtStrengthValue");
+      
+      if (fontSelect) fontSelect.value = "retro";
+      if (crtSlider) crtSlider.value = 50;
+      if (crtValue) crtValue.textContent = "50%";
+      
+      this.updateFontMode("retro");
+      this.updateCrtStrength(50);
+    } catch (error) {
+      console.error("Error applying default settings:", error);
+    }
   }
 
   updateFontMode(mode) {
-    const body = document.body;
-    body.classList.remove("font-retro", "font-original");
-    body.classList.add(`font-${mode}`);
-    
-    // Update CSS variable
-    document.documentElement.style.setProperty("--font-mode", mode);
+    try {
+      const body = document.body;
+      if (!body) return;
+      
+      body.classList.remove("font-retro", "font-original");
+      body.classList.add(`font-${mode}`);
+      
+      // Update CSS variable
+      document.documentElement.style.setProperty("--font-mode", mode);
+    } catch (error) {
+      console.error("Error updating font mode:", error);
+    }
   }
 
   updateCrtStrength(strength) {
-    const crtValue = this.getElement("crtStrengthValue");
-    crtValue.textContent = `${strength}%`;
-    
-    // Update CSS variable
-    document.documentElement.style.setProperty("--crt-strength", strength);
-    
-    // Update CRT warping effects
-    this.updateCrtWarping(strength);
+    try {
+      const crtValue = this.getElement("crtStrengthValue");
+      if (crtValue) {
+        crtValue.textContent = `${strength}%`;
+      }
+      
+      // Update CSS variable
+      document.documentElement.style.setProperty("--crt-strength", strength);
+      
+      // Update CRT warping effects
+      this.updateCrtWarping(strength);
+    } catch (error) {
+      console.error("Error updating CRT strength:", error);
+    }
   }
 
   updateCrtWarping(strength) {
@@ -735,9 +800,10 @@ class GameManager {
     
     crtCorners.style.transform = `perspective(${cornerPerspective}px) rotateX(${cornerRotationX}deg) rotateY(${cornerRotationY}deg)`;
     
-    // Keep opacity at 1 to avoid darkening
-    crtScreen.style.opacity = 1;
-    crtCorners.style.opacity = 1;
+    // Remove hardcoded opacity to allow CSS calculations to work properly
+    // The CSS already handles opacity based on --crt-strength variable
+    crtScreen.style.removeProperty('opacity');
+    crtCorners.style.removeProperty('opacity');
   }
 
   applySettings() {
@@ -967,11 +1033,18 @@ GameManager.prototype.setupDevMenuEvents = function() {
       koriBuffer = ''; // Reset buffer after opening
     }
     
-    // ESC key to close dev menu
+    // ESC key to close dev menu or settings menu
     if (e.key === 'Escape') {
       const devPanel = this.getElement("devMenuPanel");
+      const settingsPanel = this.getElement("settingsMenuPanel");
+      
+      // Close dev menu if open
       if (devPanel && !devPanel.classList.contains('hidden')) {
         this.toggleDevMenu();
+      }
+      // Close settings menu if open
+      else if (settingsPanel && !settingsPanel.classList.contains('hidden')) {
+        this.closeSettingsMenu();
       }
     }
   });
