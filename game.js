@@ -685,12 +685,19 @@ class GameManager {
     const settings = JSON.parse(localStorage.getItem("bountyIdle_settings") || "{}");
     
     fontSelect.value = settings.fontMode || "retro";
-    crtSlider.value = settings.crtStrength || 50;
-    crtValue.textContent = `${crtSlider.value}%`;
+    
+    // Validate crtStrength from loaded settings
+    const loadedCrtStrength = settings.crtStrength;
+    const safeCrtStrength = (Number.isInteger(loadedCrtStrength) && loadedCrtStrength >= 0 && loadedCrtStrength <= 100) 
+      ? loadedCrtStrength 
+      : 50; // Default to 50 if invalid
+    
+    crtSlider.value = safeCrtStrength;
+    crtValue.textContent = `${safeCrtStrength}%`;
     
     // Apply current settings
     this.updateFontMode(fontSelect.value);
-    this.updateCrtStrength(crtSlider.value);
+    this.updateCrtStrength(safeCrtStrength);
   }
 
   updateFontMode(mode) {
@@ -744,9 +751,14 @@ class GameManager {
     const fontSelect = this.getElement("fontSelect");
     const crtSlider = this.getElement("crtStrengthSlider");
     
+    const crtStrength = parseInt(crtSlider.value);
+    const safeCrtStrength = (Number.isInteger(crtStrength) && crtStrength >= 0 && crtStrength <= 100) 
+      ? crtStrength 
+      : 50; // Default to 50 if invalid
+    
     const settings = {
       fontMode: fontSelect.value,
-      crtStrength: parseInt(crtSlider.value)
+      crtStrength: safeCrtStrength
     };
     
     localStorage.setItem("bountyIdle_settings", JSON.stringify(settings));
