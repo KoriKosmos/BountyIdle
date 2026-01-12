@@ -60,7 +60,9 @@ export class UI {
   updateCrew(game) {
     if (!this.elements.crewContainer) return;
     
-    let html = "";
+    // Track which elements are active in this render cycle to remove stale ones
+    const activeIds = new Set();
+
     for (const crew of game.crewTypes) {
        let shouldShow = crew.revealed;
        if (crew.id === 'snitch') {
@@ -72,19 +74,18 @@ export class UI {
        
        if (!shouldShow) continue;
        
-       // Reveal logic is now in Game (or should be, but if UI detects it, it sets it)
-       // Strictly speaking, logic should handle data mutation. Let's assume game state is updated elsewhere or we just display.
-       // For now, if we see it should be shown but isn't marked revealed, we might want to tell Game.
-       // However, to keep it simple and match original behavior, we primarily render.
-       // NOTE: in the original code, the UI update actually mutated state (crew.revealed = true). 
-       // We should ideally move that to a pure logic step, but let's replicate behavior for parity first.
-       if (!crew.revealed) crew.revealed = true; // Side-effect, acceptable for migration
+       if (!crew.revealed) crew.revealed = true;
 
+       activeIds.add(crew.id);
+       
+       // Check if element exists
+       let section = this.elements.crewContainer.querySelector(`.crew-section[data-crew-id="${crew.id}"]`);
+       
        const cost = game.getCrewCost(crew);
        const canAfford = game.state.credits >= cost;
        const canClick = game.canClick('hire');
        const disabled = !(canAfford && canClick);
-
+       
        let description = crew.description;
        if (crew.id === 'snitch') {
          const interval = game.getSnitchIntervalTicks(crew);
@@ -92,39 +93,74 @@ export class UI {
          description = `Autoclicks every ${interval.toFixed(1)} ${tickText}`;
        }
 
-       html += `
-         <div class="crew-section" data-crew-id="${crew.id}">
+       if (!section) {
+           // Create new
+           section = document.createElement('div');
+           section.className = 'crew-section';
+           section.setAttribute('data-crew-id', crew.id);
+           section.innerHTML = `
            <div class="crew-header">
              <h3 class="crew-name">${crew.name}</h3>
              <div class="crew-stats">
-               ${crew.perTick > 0 ? `<span class="crew-income">+${(crew.count * crew.perTick).toFixed(1)} credits/tick</span>` : ''}
-               <span class="crew-description">${description}</span>
-               <span class="crew-count">Hired: ${crew.count}</span>
+               <span class="crew-income-display"></span>
+               <span class="crew-description-display"></span>
+               <span class="crew-count-display"></span>
              </div>
            </div>
            <div class="crew-actions">
-             <button class="btn purchase-btn" 
-                data-crew-id="${crew.id}" 
-                data-cooldown="hire" 
-                ${!canAfford ? 'data-cost-blocked="true"' : ''}
-                ${disabled ? 'disabled' : ''}>
+             <button class="btn purchase-btn" data-crew-id="${crew.id}" data-cooldown="hire">
                Hire ${crew.name}
              </button>
              <div class="crew-cost">
-               <span class="text-secondary">Cost: ${cost}</span>
+               <span class="text-secondary crew-cost-display"></span>
              </div>
            </div>
-         </div>
-       `;
+           `;
+           this.elements.crewContainer.appendChild(section);
+       }
+
+       // Update Content
+       const incomeDisplay = section.querySelector('.crew-income-display');
+       if (incomeDisplay) {
+            incomeDisplay.textContent = crew.perTick > 0 ? `+${(crew.count * crew.perTick).toFixed(1)} credits/tick` : '';
+            incomeDisplay.style.display = crew.perTick > 0 ? '' : 'none';
+       }
+       
+       const descDisplay = section.querySelector('.crew-description-display');
+       if (descDisplay) descDisplay.textContent = description;
+       
+       const countDisplay = section.querySelector('.crew-count-display');
+       if (countDisplay) countDisplay.textContent = `Hired: ${crew.count}`;
+       
+       const costDisplay = section.querySelector('.crew-cost-display');
+       if (costDisplay) costDisplay.textContent = `Cost: ${cost}`;
+
+       // Update Button State
+       const btn = section.querySelector('button');
+       if (btn) {
+           if (disabled) btn.setAttribute('disabled', '');
+           else btn.removeAttribute('disabled');
+           
+           if (!canAfford) btn.setAttribute('data-cost-blocked', 'true');
+           else btn.removeAttribute('data-cost-blocked');
+       }
     }
-    this.elements.crewContainer.innerHTML = html;
+
+    // Remove stale elements
+    const existing = this.elements.crewContainer.querySelectorAll('.crew-section');
+    existing.forEach(el => {
+        if (!activeIds.has(el.getAttribute('data-crew-id'))) {
+            el.remove();
+        }
+    });
 
   }
 
   updateUpgrades(game) {
     if (!this.elements.upgradesContainer) return;
+    
+    const activeIds = new Set();
 
-    let html = "";
     for (const upgrade of game.upgradeTypes) {
       const count = game.state.upgrades[upgrade.id] || 0;
       const alreadyRevealed = game.state.revealedUpgrades[upgrade.id];
@@ -133,8 +169,12 @@ export class UI {
       if (!shouldShow) continue;
 
       if (!alreadyRevealed) {
-        game.state.revealedUpgrades[upgrade.id] = true; // Side-effect
+        game.state.revealedUpgrades[upgrade.id] = true; 
       }
+      
+      activeIds.add(upgrade.id);
+
+      let section = this.elements.upgradesContainer.querySelector(`.upgrade-section[data-upgrade-id="${upgrade.id}"]`);
 
       const cost = game.getUpgradeCost(upgrade);
       const canAfford = game.state.credits >= cost;
@@ -146,25 +186,56 @@ export class UI {
         const net = Math.min(100, 5 * count);
         extra = ` <span class="text-accent">• Net: ${net}%</span>`;
       }
-
-      html += `
-        <div class="upgrade-section ${isMaxed ? 'maxed' : ''}" data-upgrade-id="${upgrade.id}">
+      
+      if (!section) {
+          section = document.createElement('div');
+          section.className = 'upgrade-section';
+          section.setAttribute('data-upgrade-id', upgrade.id);
+          section.innerHTML = `
           <div class="upgrade-header">
-            <span class="upgrade-name">${isMaxed ? `${upgrade.name} (Max)` : upgrade.name}</span>
-            <span class="upgrade-cost">${isMaxed ? '' : `Cost: ${cost}`}</span>
+            <span class="upgrade-name-display"></span>
+            <span class="upgrade-cost-display"></span>
           </div>
-          <div class="upgrade-description">${upgrade.description}${extra}</div>
-          <button class="btn purchase-btn" 
-            data-upgrade-id="${upgrade.id}" 
-            ${!canAfford && !isMaxed ? 'data-cost-blocked="true"' : ''}
-            ${disabled ? 'disabled' : ''}>
-            ${isMaxed ? 'Maxed' : 'Purchase'}
+          <div class="upgrade-description-display"></div>
+          <button class="btn purchase-btn" data-upgrade-id="${upgrade.id}">
           </button>
-        </div>
-      `;
-    }
-    this.elements.upgradesContainer.innerHTML = html;
+          `;
+          this.elements.upgradesContainer.appendChild(section);
+      }
+      
+      // Update Classes
+      if (isMaxed) section.classList.add('maxed');
+      else section.classList.remove('maxed');
 
+      // Update Texts
+      const nameDisplay = section.querySelector('.upgrade-name-display');
+      if (nameDisplay) nameDisplay.textContent = isMaxed ? `${upgrade.name} (Max)` : upgrade.name;
+      
+      const costDisplay = section.querySelector('.upgrade-cost-display');
+      if (costDisplay) costDisplay.textContent = isMaxed ? '' : `Cost: ${cost}`;
+      
+      const descDisplay = section.querySelector('.upgrade-description-display');
+      if (descDisplay) descDisplay.innerHTML = `${upgrade.description}${extra}`;
+      
+      // Update Button
+      const btn = section.querySelector('button');
+      if (btn) {
+           btn.textContent = isMaxed ? 'Maxed' : 'Purchase';
+           if (disabled) btn.setAttribute('disabled', '');
+           else btn.removeAttribute('disabled');
+
+           if (!canAfford && !isMaxed) btn.setAttribute('data-cost-blocked', 'true');
+           else btn.removeAttribute('data-cost-blocked');
+      }
+    }
+    
+    // Cleanup
+    const existing = this.elements.upgradesContainer.querySelectorAll('.upgrade-section');
+    existing.forEach(el => {
+        if (!activeIds.has(el.getAttribute('data-upgrade-id'))) {
+            el.remove();
+        }
+    });
   }
 
   updateContracts(game) {
@@ -172,7 +243,6 @@ export class UI {
     const container = this.elements.contractsContainer;
     if (!section || !container) return;
 
-    // Logic migration: check unlock condition
     if (!game.state.flags.contractsUnlocked && game.crewTypes.some(c => c.count >= 10)) {
       game.state.flags.contractsUnlocked = true;
       this.showToast("Contracts unlocked!");
@@ -195,23 +265,54 @@ export class UI {
     if (!contract) return;
 
     if (!game.state.contractActive) {
-      container.innerHTML = `
-        <div class="contract-progress">
-          <p>${contract.description}</p>
-          <button class="btn btn-contract" id="takeContractBtn">Take Contract</button>
-        </div>
-      `;
+      // Inactive State
+      if (!container.querySelector('.contract-inactive-view')) {
+          container.innerHTML = `
+            <div class="contract-progress contract-inactive-view">
+              <p class="contract-desc-display"></p>
+              <button class="btn btn-contract" id="takeContractBtn">Take Contract</button>
+            </div>
+          `;
+      }
+      
+      const desc = container.querySelector('.contract-desc-display');
+      if (desc) desc.textContent = contract.description;
+      
+      // Re-attach event listener if we wiped the container (simplified approach: 
+      // since the button ID is constant and event delegation is used in setupEventListeners, we don't need to re-bind)
+      
     } else {
+      // Active State
+      let activeView = container.querySelector('.contract-active-view');
+      if (!activeView) {
+          container.innerHTML = `
+            <div class="contract-progress contract-active-view">
+              <p class="contract-details-display"></p>
+              <div>
+                 Progress: <strong id="contractProgressNum"></strong> 
+                 <span class="contract-goal-display"></span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill"></div>
+              </div>
+            </div>
+          `;
+          activeView = container.querySelector('.contract-active-view');
+      }
+
       const progressPercent = Math.min(100, (game.state.contractProgress / contract.goal) * 100);
-      container.innerHTML = `
-        <div class="contract-progress">
-          <p>${contract.details}</p>
-          <div>Progress: <strong id="contractProgressNum">${formatNumber(game.state.contractProgress)}</strong> / ${formatNumber(contract.goal)}</div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${progressPercent}%"></div>
-          </div>
-        </div>
-      `;
+      
+      const details = activeView.querySelector('.contract-details-display');
+      if (details) details.textContent = contract.details;
+      
+      const progressNum = activeView.querySelector('#contractProgressNum');
+      if (progressNum) progressNum.textContent = formatNumber(game.state.contractProgress);
+      
+      const goalDisplay = activeView.querySelector('.contract-goal-display');
+      if (goalDisplay) goalDisplay.textContent = `/ ${formatNumber(contract.goal)}`;
+      
+      const fill = activeView.querySelector('.progress-fill');
+      if (fill) fill.style.width = `${progressPercent}%`;
     }
   }
 
