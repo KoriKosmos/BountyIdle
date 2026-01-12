@@ -103,7 +103,11 @@ export class UI {
              </div>
            </div>
            <div class="crew-actions">
-             <button class="btn purchase-btn" data-crew-id="${crew.id}" data-cooldown="hire" ${disabled ? 'disabled' : ''}>
+             <button class="btn purchase-btn" 
+                data-crew-id="${crew.id}" 
+                data-cooldown="hire" 
+                ${!canAfford ? 'data-cost-blocked="true"' : ''}
+                ${disabled ? 'disabled' : ''}>
                Hire ${crew.name}
              </button>
              <div class="crew-cost">
@@ -114,6 +118,7 @@ export class UI {
        `;
     }
     this.elements.crewContainer.innerHTML = html;
+
   }
 
   updateUpgrades(game) {
@@ -149,13 +154,17 @@ export class UI {
             <span class="upgrade-cost">${isMaxed ? '' : `Cost: ${cost}`}</span>
           </div>
           <div class="upgrade-description">${upgrade.description}${extra}</div>
-          <button class="btn purchase-btn" data-upgrade-id="${upgrade.id}" ${disabled ? 'disabled' : ''}>
+          <button class="btn purchase-btn" 
+            data-upgrade-id="${upgrade.id}" 
+            ${!canAfford && !isMaxed ? 'data-cost-blocked="true"' : ''}
+            ${disabled ? 'disabled' : ''}>
             ${isMaxed ? 'Maxed' : 'Purchase'}
           </button>
         </div>
       `;
     }
     this.elements.upgradesContainer.innerHTML = html;
+
   }
 
   updateContracts(game) {
@@ -253,7 +262,10 @@ export class UI {
 
        if (total === 0 || now >= readyAt) {
          btn.style.setProperty('--cooldown-width', '0%');
-         btn.disabled = false;
+         // Only enable if not blocked by cost
+         if (!btn.hasAttribute('data-cost-blocked')) {
+            btn.disabled = false;
+         }
        } else {
          const elapsed = Math.max(0, total - (readyAt - now));
          const pct = Math.max(0, Math.min(1, elapsed / total));
@@ -261,6 +273,8 @@ export class UI {
          btn.disabled = true;
        }
      }
+
+
   }
 
   showToast(message, type = "info") {
