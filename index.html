@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bounty Office</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
     <!-- Toast notifications -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -16,170 +16,267 @@
 
     <!-- Main container -->
     <div class="app-container">
-        <!-- Main game area -->
-        <main class="game-main">
-            <!-- Left sidebar - Crew -->
-            <aside class="sidebar sidebar-left">
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">Crew</h2>
-                    </div>
-                    <div class="panel-content">
-                        <div id="crewContainer"></div>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Center - Main game -->
-            <section class="game-center">
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title gradient-text">Bounty Office</h2>
-                        <div class="credits-display">
-                            <span class="credits-label">Credits:</span>
-                            <span class="credits-value" id="creditsDisplay">0</span>
-                        </div>
-                        <button id="settingsBtn" class="btn btn-control" title="Settings">
-                            <span class="settings-icon">⚙</span>
-                        </button>
-                    </div>
-                    <div class="panel-content">
-                        <!-- Main action area -->
-                        <div class="action-area">
-                            <div class="action-row">
-                                <button id="huntBtn" class="btn btn-primary action-btn" data-action="hunt" data-cooldown="action">
-                                    <span class="btn-text">Hunt petty bounty</span>
-                                    <span class="btn-value" id="huntValue">+1 credit</span>
-                                </button>
-                            </div>
-                            
-                            <div class="action-row">
-                                <button id="contractBtn" class="btn btn-secondary action-btn hidden" data-action="contract" data-cooldown="action">
-                                    <span class="btn-text">Advance contract</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Contracts section -->
-                        <div id="contractsSection" class="contracts-section hidden">
-                            <div class="contracts-header">
-                                <h3 class="contracts-title">Active Contracts</h3>
-                                <div class="contracts-hint">
-                                    <span class="warning-text">⚠️ Contracts take time to complete!</span>
-                                </div>
-                            </div>
-                            <div id="contractsContainer"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Right sidebar - Upgrades -->
-            <aside class="sidebar sidebar-right">
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title">Upgrades</h2>
-                    </div>
-                    <div class="panel-content">
-                        <div id="upgradesContainer"></div>
-                    </div>
-                </div>
-            </aside>
-        </main>
-
-        <!-- Dev Menu Panel -->
-        <div id="devMenuPanel" class="dev-menu-panel hidden">
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">Developer Menu</h2>
-                    <button id="closeDevMenuBtn" class="btn btn-close">×</button>
-                </div>
-                <div class="panel-content">
-                    <div class="dev-section">
-                        <h3>Resources</h3>
-                        <div class="dev-controls">
-                            <button class="btn btn-dev-action" data-dev-action="addCredits">+1000 Credits</button>
-                            <button class="btn btn-dev-action" data-dev-action="addCrew">+10 Crew</button>
-                            <button class="btn btn-dev-action" data-dev-action="maxUpgrades">Max Upgrades</button>
-                            <button class="btn btn-dev-action" data-dev-action="completeContract">Complete Contract</button>
-                        </div>
-                    </div>
-                    
-                    <div class="dev-section">
-                        <h3>Game State</h3>
-                        <div class="dev-info">
-                            <div>Ticks: <span id="devTicks">0</span></div>
-                            <div>Unbanked: <span id="devUnbanked">0</span></div>
-                            <div>Contract Progress: <span id="devContractProgress">0</span></div>
-                        </div>
-                    </div>
-                    
-                    <div class="dev-section">
-                        <h3>Debug</h3>
-                        <div class="dev-controls">
-                            <button class="btn btn-dev-action" data-dev-action="toggleAutosave">Toggle Autosave</button>
-                            <button class="btn btn-dev-action" data-dev-action="forceSave">Force Save</button>
-                            <button class="btn btn-dev-action" data-dev-action="exportSave">Export Save</button>
-                            <button class="btn btn-dev-action" data-dev-action="importSave">Import Save</button>
-                        </div>
-                    </div>
-                </div>
+      <!-- Main game area -->
+      <main class="game-main">
+        <!-- Left sidebar - Crew -->
+        <aside class="sidebar sidebar-left">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Crew</h2>
             </div>
-        </div>
-
-        <!-- Settings Menu Panel -->
-        <div id="settingsMenuPanel" class="settings-menu-panel hidden">
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">Settings</h2>
-                    <button id="closeSettingsBtn" class="btn btn-close">×</button>
-                </div>
-                <div class="panel-content">
-                    <div class="settings-section">
-                        <h3>Typography</h3>
-                        <div class="setting-item">
-                            <label for="fontSelect">Text Font:</label>
-                            <select id="fontSelect" class="setting-select">
-                                <option value="retro">Retro-Futuristic (Orbitron + Share Tech Mono)</option>
-                                <option value="original">Original Font Stack</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>Visual Effects</h3>
-                        <div class="setting-item">
-                            <label for="crtStrengthSlider">CRT Filter Strength:</label>
-                            <div class="slider-container">
-                                <input type="range" id="crtStrengthSlider" class="setting-slider" min="0" max="100" value="50">
-                                <span class="slider-value" id="crtStrengthValue">50%</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>Actions</h3>
-                        <div class="settings-controls">
-                            <button class="btn btn-secondary" id="resetSettingsBtn">Reset to Defaults</button>
-                            <button class="btn btn-primary" id="applySettingsBtn">Apply Settings</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="panel-content">
+              <div id="crewContainer"></div>
             </div>
-        </div>
+          </div>
+        </aside>
 
-        <!-- Save controls -->
-        <div class="save-controls">
-            <div class="save-controls-left">
-                <button id="manualSaveBtn" class="btn btn-control">Manual Save</button>
-                <button id="autosaveToggleBtn" class="btn btn-control btn-active">Autosave ON</button>
-                <button id="resetBtn" class="btn btn-control btn-danger">Reset Save</button>
+        <!-- Center - Main game -->
+        <section class="game-center">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title gradient-text">Bounty Office</h2>
+              <div class="credits-display">
+                <span class="credits-label">Credits:</span>
+                <span class="credits-value" id="creditsDisplay">0</span>
+              </div>
+              <button id="settingsBtn" class="btn btn-control" title="Settings">
+                <span class="settings-icon">⚙</span>
+              </button>
             </div>
-            <div class="last-saved" id="lastSaved">Last saved just now</div>
+            <div class="panel-content">
+              <!-- Main action area -->
+              <div class="action-area">
+                <div class="action-row">
+                  <button
+                    id="huntBtn"
+                    class="btn btn-primary action-btn"
+                    data-action="hunt"
+                    data-cooldown="action"
+                  >
+                    <span class="btn-text">Hunt petty bounty</span>
+                    <span class="btn-value" id="huntValue">+1 credit</span>
+                  </button>
+                </div>
+
+                <div class="action-row">
+                  <button
+                    id="contractBtn"
+                    class="btn btn-secondary action-btn hidden"
+                    data-action="contract"
+                    data-cooldown="action"
+                  >
+                    <span class="btn-text">Advance contract</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Contracts section -->
+              <div id="contractsSection" class="contracts-section hidden">
+                <div class="contracts-header">
+                  <h3 class="contracts-title">Active Contracts</h3>
+                  <div class="contracts-hint">
+                    <span class="warning-text"
+                      >⚠️ Contracts take time to complete!</span
+                    >
+                  </div>
+                </div>
+                <div id="contractsContainer"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right sidebar - Upgrades -->
+        <aside class="sidebar sidebar-right">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Upgrades</h2>
+            </div>
+            <div class="panel-content">
+              <div id="upgradesContainer"></div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <!-- Dev Menu Panel -->
+      <div id="devMenuPanel" class="dev-menu-panel hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Developer Menu</h2>
+            <button id="closeDevMenuBtn" class="btn btn-close">×</button>
+          </div>
+          <div class="panel-content">
+            <div class="dev-section">
+              <h3>Resources</h3>
+              <div class="dev-controls">
+                <button class="btn btn-dev-action" data-dev-action="addCredits">
+                  +1000 Credits
+                </button>
+                <button class="btn btn-dev-action" data-dev-action="addCrew">
+                  +10 Crew
+                </button>
+                <button
+                  class="btn btn-dev-action"
+                  data-dev-action="maxUpgrades"
+                >
+                  Max Upgrades
+                </button>
+                <button
+                  class="btn btn-dev-action"
+                  data-dev-action="completeContract"
+                >
+                  Complete Contract
+                </button>
+              </div>
+            </div>
+
+            <div class="dev-section">
+              <h3>Game State</h3>
+              <div class="dev-info">
+                <div>Ticks: <span id="devTicks">0</span></div>
+                <div>Unbanked: <span id="devUnbanked">0</span></div>
+                <div>
+                  Contract Progress: <span id="devContractProgress">0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="dev-section">
+              <h3>Debug</h3>
+              <div class="dev-controls">
+                <button
+                  class="btn btn-dev-action"
+                  data-dev-action="toggleAutosave"
+                >
+                  Toggle Autosave
+                </button>
+                <button class="btn btn-dev-action" data-dev-action="forceSave">
+                  Force Save
+                </button>
+                <button class="btn btn-dev-action" data-dev-action="exportSave">
+                  Export Save
+                </button>
+                <button class="btn btn-dev-action" data-dev-action="importSave">
+                  Import Save
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Settings Menu Panel -->
+      <div id="settingsMenuPanel" class="settings-menu-panel hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Settings</h2>
+            <button id="closeSettingsBtn" class="btn btn-close">×</button>
+          </div>
+          <div class="panel-content">
+            <div class="settings-section">
+              <h3>Typography</h3>
+              <div class="setting-item">
+                <label for="fontSelect">Text Font:</label>
+                <select id="fontSelect" class="setting-select">
+                  <option value="retro">
+                    Retro-Futuristic (Orbitron + Share Tech Mono)
+                  </option>
+                  <option value="original">Original Font Stack</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>Visual Effects</h3>
+              <div class="setting-item">
+                <label for="crtStrengthSlider">CRT Filter Strength:</label>
+                <div class="slider-container">
+                  <input
+                    type="range"
+                    id="crtStrengthSlider"
+                    class="setting-slider"
+                    min="0"
+                    max="100"
+                    value="50"
+                  />
+                  <span class="slider-value" id="crtStrengthValue">50%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>Actions</h3>
+              <div class="settings-controls">
+                <button class="btn btn-secondary" id="resetSettingsBtn">
+                  Reset to Defaults
+                </button>
+                <button class="btn btn-primary" id="applySettingsBtn">
+                  Apply Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manage Saves Panel -->
+      <div id="manageSavesPanel" class="settings-menu-panel hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Manage Saves</h2>
+            <button id="closeManageSavesBtn" class="btn btn-close">×</button>
+          </div>
+          <div class="panel-content">
+            <div class="settings-section">
+              <h3>Save & Reset</h3>
+              <p class="text-muted" style="margin-bottom: 15px">
+                Manually save your progress or reset your save file to start
+                over.
+              </p>
+              <div
+                class="settings-controls"
+                style="
+                  justify-content: space-between;
+                  flex-direction: column;
+                  gap: 10px;
+                "
+              >
+                <button
+                  id="manualSaveBtn"
+                  class="btn btn-control"
+                  style="width: 100%; justify-content: center"
+                >
+                  Manual Save
+                </button>
+                <button
+                  id="resetBtn"
+                  class="btn btn-control btn-danger"
+                  style="width: 100%; justify-content: center"
+                >
+                  Reset Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save controls -->
+      <div class="save-controls">
+        <div class="save-controls-left">
+          <button id="autosaveToggleBtn" class="btn btn-control btn-active">
+            Autosave ON
+          </button>
+          <button id="manageSavesBtn" class="btn btn-control">
+            Manage Saves
+          </button>
+        </div>
+        <div class="last-saved" id="lastSaved">Last saved just now</div>
+      </div>
     </div>
 
     <!-- Scripts -->
     <script type="module" src="src/main.js"></script>
-</body>
+  </body>
 </html>

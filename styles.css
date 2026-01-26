@@ -1,6 +1,6 @@
 /* Import retro-futuristic fonts */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
 
 /* CSS Variables for consistent theming */
 :root {
@@ -11,47 +11,47 @@
   --bg-panel: #1e2a4a;
   --border-color: #2d3748;
   --border-light: #4a5568;
-  
+
   /* Text colors - Clean hierarchy */
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-accent: #60a5fa;
   --text-muted: #64748b;
-  
+
   /* Tier 1: Core Actions - Brightest neon */
   --accent-primary: #00b3e6;
   --accent-primary-hover: #22d3ee;
   --accent-success: #22c55e;
   --accent-success-hover: #34d399;
-  
+
   /* Tier 2: Progression - Muted neon */
   --accent-secondary: #5b21b6;
   --accent-secondary-hover: #7c3aed;
-  
+
   /* Tier 3: Contextual - Subtle accents */
   --accent-tertiary: #4a5568;
   --accent-danger: #ef4444;
   --accent-warning: #f59e0b;
-  
+
   /* Button colors - Unified around the neon */
   --btn-primary: var(--accent-primary);
   --btn-primary-hover: var(--accent-primary-hover);
   --btn-secondary: var(--bg-tertiary);
   --btn-secondary-hover: #1e3a5f;
   --btn-disabled: #4a5568;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
-  
+
   /* Border radius */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  
+
   /* Spacing */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -59,7 +59,7 @@
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
-  
+
   /* Typography */
   --font-size-xs: 12px;
   --font-size-sm: 14px;
@@ -68,14 +68,14 @@
   --font-size-xl: 20px;
   --font-size-2xl: 24px;
   --font-size-3xl: 30px;
-  
+
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-slow: 0.35s ease;
-  
+
   /* Settings */
-  --font-mode: 'retro';
+  --font-mode: "retro";
   --crt-strength: 50;
 }
 
@@ -92,12 +92,32 @@ html {
 }
 
 body {
-  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    "Orbitron",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   background: var(--bg-primary);
-  background-image: 
-    radial-gradient(circle at 20% 80%, rgba(0, 179, 230, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(91, 33, 182, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(34, 197, 94, 0.03) 0%, transparent 50%);
+  background-image:
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(0, 179, 230, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(91, 33, 182, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 40%,
+      rgba(34, 197, 94, 0.03) 0%,
+      transparent 50%
+    );
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
@@ -109,34 +129,33 @@ body {
 
 /* CRT Screen Effect - Inspired by CRT shader effects */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 2px,
-      rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 4px
-    );
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 2px,
+    rgba(0, 179, 230, calc(0.03 * var(--crt-strength) / 50)) 4px
+  );
   pointer-events: none;
   z-index: 1000;
   animation: scanlines 0.1s linear infinite;
   opacity: calc(var(--crt-strength) / 100);
   transform: perspective(2000px) rotateX(0.5deg);
   border-radius: 10px;
-  box-shadow: 
+  box-shadow:
     inset 0 0 20px rgba(0, 0, 0, 0.3),
     0 0 30px rgba(0, 179, 230, calc(0.05 * var(--crt-strength) / 50));
 }
 
 /* CRT Vignette Effect */
 body::after {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
@@ -156,7 +175,7 @@ body::after {
 
 /* CRT Screen Warping Container */
 .crt-screen::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -5%;
   left: -5%;
@@ -181,7 +200,7 @@ body::after {
 }
 
 .crt-corners::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -2%;
   left: -2%;
@@ -194,15 +213,25 @@ body::after {
 
 /* CRT Scanlines Animation */
 @keyframes scanlines {
-  0% { transform: translateY(0) perspective(1000px) rotateX(2deg); }
-  100% { transform: translateY(4px) perspective(1000px) rotateX(2deg); }
+  0% {
+    transform: translateY(0) perspective(1000px) rotateX(2deg);
+  }
+  100% {
+    transform: translateY(4px) perspective(1000px) rotateX(2deg);
+  }
 }
 
 /* CRT Warping Animation */
 @keyframes crtWarp {
-  0% { transform: perspective(800px) rotateX(1deg) scale(1); }
-  50% { transform: perspective(800px) rotateX(1.2deg) scale(1.02); }
-  100% { transform: perspective(800px) rotateX(1deg) scale(1); }
+  0% {
+    transform: perspective(800px) rotateX(1deg) scale(1);
+  }
+  50% {
+    transform: perspective(800px) rotateX(1.2deg) scale(1.02);
+  }
+  100% {
+    transform: perspective(800px) rotateX(1deg) scale(1);
+  }
 }
 
 .crt-screen {
@@ -222,7 +251,7 @@ body::after {
 
 /* CRT Glow Effect for Text */
 .crt-glow {
-  text-shadow: 
+  text-shadow:
     0 0 5px currentColor,
     0 0 10px currentColor,
     0 0 15px currentColor,
@@ -231,11 +260,21 @@ body::after {
 
 /* Font mode classes */
 .font-retro {
-  font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    "Orbitron",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
 }
 
 .font-original {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
 }
 
 /* Retro mode - Apply retro fonts to specific elements */
@@ -245,7 +284,7 @@ body::after {
 .font-retro .btn-contract,
 .font-retro .crew-name,
 .font-retro .upgrade-name {
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -256,7 +295,7 @@ body::after {
 .font-retro .setting-item label,
 .font-retro .setting-select,
 .font-retro .slider-value {
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 
 /* Original mode - Use the original font stack exactly as specified */
@@ -266,7 +305,9 @@ body::after {
 .font-original .btn-contract,
 .font-original .crew-name,
 .font-original .upgrade-name {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   letter-spacing: normal;
   text-transform: none;
 }
@@ -277,7 +318,9 @@ body::after {
 .font-original .setting-item label,
 .font-original .setting-select,
 .font-original .slider-value {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
 }
 
 /* Utility classes */
@@ -290,8 +333,14 @@ body::after {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* App container */
@@ -322,11 +371,15 @@ body::after {
   font-weight: 900;
   color: var(--text-primary);
   margin: 0;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-secondary)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -359,8 +412,6 @@ body::after {
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
-
-
 
 /* Settings button styling */
 .settings-icon {
@@ -403,7 +454,7 @@ body::after {
   color: var(--text-accent);
   margin-bottom: var(--space-md);
   font-size: var(--font-size-lg);
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -418,7 +469,7 @@ body::after {
 .setting-item label {
   color: var(--text-primary);
   font-weight: 600;
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 
 .setting-select {
@@ -427,7 +478,7 @@ body::after {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: var(--space-sm);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   font-size: var(--font-size-sm);
 }
 
@@ -476,7 +527,7 @@ body::after {
 
 .slider-value {
   color: var(--accent-primary);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   font-weight: 600;
   min-width: 40px;
   text-align: right;
@@ -486,6 +537,29 @@ body::after {
   display: flex;
   gap: var(--space-sm);
   justify-content: flex-end;
+}
+
+.settings-controls.centered {
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.mb-md {
+  margin-bottom: var(--space-md);
+}
+
+.width-full {
+  width: 100%;
+}
+
+.justify-center {
+  justify-content: center;
 }
 
 /* Dev Menu Panel */
@@ -649,31 +723,34 @@ body::after {
 }
 
 .panel::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary),
+    var(--accent-secondary)
+  );
   opacity: 0.7;
 }
 
 .panel::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 1px,
-      rgba(0, 179, 230, 0.02) 1px,
-      rgba(0, 179, 230, 0.02) 2px
-    );
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 179, 230, 0.02) 1px,
+    rgba(0, 179, 230, 0.02) 2px
+  );
   pointer-events: none;
   opacity: 0.3;
 }
@@ -694,7 +771,11 @@ body::after {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-secondary)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -705,7 +786,7 @@ body::after {
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -721,7 +802,7 @@ body::after {
   padding: var(--space-lg) var(--space-xl);
   min-height: 56px;
   border-radius: var(--radius-lg);
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -884,7 +965,7 @@ body::after {
   font-size: var(--font-size-sm);
   opacity: 0.8;
   font-weight: 500;
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   text-shadow: 0 0 3px currentColor;
 }
 
@@ -894,7 +975,7 @@ body::after {
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 var(--space-sm) 0;
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -903,7 +984,7 @@ body::after {
   font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-primary);
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -916,7 +997,11 @@ body::after {
   top: 0;
   bottom: 0;
   width: var(--cooldown-width, 0%);
-  background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
   transition: width 0.1s linear;
   pointer-events: none;
   border-radius: var(--radius-md);
@@ -933,7 +1018,7 @@ body::after {
   padding: var(--space-lg) var(--space-xl);
   min-height: 56px;
   border-radius: var(--radius-lg);
-  font-family: 'Orbitron', sans-serif;
+  font-family: "Orbitron", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -958,7 +1043,7 @@ body::after {
   border-color: var(--accent-secondary);
   transition: var(--transition-fast);
   box-shadow: 0 0 8px rgba(91, 33, 182, 0.25);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   letter-spacing: 0.5px;
 }
 
@@ -1001,13 +1086,17 @@ body::after {
 }
 
 .crew-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary),
+    var(--accent-secondary)
+  );
   opacity: 0;
   transition: opacity var(--transition-normal);
 }
@@ -1083,13 +1172,17 @@ body::after {
 }
 
 .upgrade-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+  background: linear-gradient(
+    90deg,
+    var(--accent-secondary),
+    var(--accent-primary)
+  );
   opacity: 0;
   transition: opacity var(--transition-normal);
 }
@@ -1204,7 +1297,11 @@ body::after {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(
+    90deg,
+    var(--accent-primary),
+    var(--accent-secondary)
+  );
   transition: width var(--transition-normal);
   border-radius: var(--radius-sm);
 }
@@ -1283,66 +1380,66 @@ body::after {
   .app-container {
     padding: var(--space-sm);
   }
-  
+
   .header-content {
     flex-direction: column;
     align-items: stretch;
     gap: var(--space-sm);
   }
-  
+
   .app-title {
     font-size: var(--font-size-2xl);
     text-align: center;
   }
-  
+
   .header-stats {
     align-items: center;
     flex-direction: row;
     justify-content: space-between;
   }
-  
+
   .credits-display {
     font-size: var(--font-size-base);
   }
-  
+
   .panel-content {
     padding: var(--space-md);
   }
-  
+
   .panel-header {
     padding: var(--space-md);
     flex-direction: column;
     gap: var(--space-sm);
     align-items: stretch;
   }
-  
+
   .panel-title {
     font-size: var(--font-size-lg);
     text-align: center;
   }
-  
+
   .btn {
     padding: var(--space-sm) var(--space-md);
     font-size: var(--font-size-sm);
     min-height: 44px;
   }
-  
+
   .crew-section {
     padding: var(--space-md);
   }
-  
+
   .crew-name {
     font-size: var(--font-size-base);
   }
-  
+
   .upgrade-section {
     padding: var(--space-sm);
   }
-  
+
   .game-main {
     gap: var(--space-md);
   }
-  
+
   .save-controls {
     position: fixed;
     bottom: var(--space-sm);
@@ -1352,30 +1449,30 @@ body::after {
     justify-content: center;
     align-items: center;
   }
-  
+
   .save-controls-left {
     flex-direction: row;
     gap: var(--space-sm);
   }
-  
+
   .save-controls .btn {
     flex: 1;
     min-width: 0;
     padding: var(--space-sm);
   }
-  
+
   .last-saved {
     font-size: var(--font-size-xs);
     padding: var(--space-xs);
   }
-  
+
   .toast-container {
     left: 20px;
     right: 20px;
     transform: none;
     bottom: var(--space-lg);
   }
-  
+
   .toast {
     max-width: none;
     width: 100%;
@@ -1387,27 +1484,27 @@ body::after {
   .app-container {
     padding: var(--space-xs);
   }
-  
+
   .header-stats {
     flex-direction: column;
     align-items: center;
     gap: var(--space-xs);
   }
-  
+
   .btn {
     width: 100%;
     text-align: center;
     padding: var(--space-sm);
   }
-  
+
   .app-title {
     font-size: var(--font-size-xl);
   }
-  
+
   .panel-title {
     font-size: var(--font-size-base);
   }
-  
+
   .game-main {
     gap: var(--space-sm);
   }
@@ -1418,23 +1515,23 @@ body::after {
   .app-container {
     padding: var(--space-xs);
   }
-  
+
   .app-header {
     margin-bottom: var(--space-sm);
   }
-  
+
   .app-title {
     font-size: var(--font-size-xl);
   }
-  
+
   .panel {
     padding: var(--space-sm);
   }
-  
+
   .panel-title {
     font-size: var(--font-size-base);
   }
-  
+
   .game-main {
     gap: var(--space-sm);
   }
@@ -1465,11 +1562,11 @@ body::after {
   .upgrade-section {
     transition: none;
   }
-  
+
   .btn:hover:not(:disabled) {
     transform: none;
   }
-  
+
   .panel:hover,
   .crew-section:hover,
   .upgrade-section:hover {
@@ -1505,7 +1602,7 @@ body::after {
   .save-controls {
     display: none;
   }
-  
+
   .panel {
     border: 1px solid #000;
     box-shadow: none;

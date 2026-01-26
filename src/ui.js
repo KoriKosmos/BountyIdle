@@ -32,7 +32,8 @@ export class UI {
       'devMenuPanel', 'settingsMenuPanel', 'settingsBtn',
       'closeSettingsBtn', 'fontSelect', 'crtStrengthSlider',
       'crtStrengthValue', 'crtScreen', 'crtCorners',
-      'manualSaveBtn', 'autosaveToggleBtn', 'resetBtn', 'lastSaved'
+      'manualSaveBtn', 'autosaveToggleBtn', 'resetBtn', 'lastSaved',
+      'manageSavesBtn', 'manageSavesPanel', 'closeManageSavesBtn'
     ];
     
     ids.forEach(id => {
@@ -459,6 +460,20 @@ export class UI {
                }
                this.game.resetSave();
            });
+      }
+
+
+      // Manage Saves Modal
+      if (this.elements.manageSavesBtn) {
+          this.elements.manageSavesBtn.addEventListener('click', () => {
+              if (this.elements.manageSavesPanel) this.elements.manageSavesPanel.classList.remove('hidden');
+          });
+      }
+
+      if (this.elements.closeManageSavesBtn) {
+          this.elements.closeManageSavesBtn.addEventListener('click', () => {
+              if (this.elements.manageSavesPanel) this.elements.manageSavesPanel.classList.add('hidden');
+          });
       }
   }
 
