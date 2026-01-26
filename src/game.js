@@ -294,6 +294,27 @@ export class Game {
     this.lastSaveTime = Date.now();
   }
 
+  exportSaveString() {
+    this.save(); // Ensure latest state is saved
+    const json = localStorage.getItem(CONFIG.SAVE_KEY);
+    return btoa(json); // Simple base64 encoding
+  }
+
+  importSaveString(saveString) {
+    try {
+      const json = atob(saveString);
+      const data = JSON.parse(json);
+      if (!data.state || !data.crewCounts) throw new Error("Invalid save structure");
+      
+      localStorage.setItem(CONFIG.SAVE_KEY, json);
+      location.reload();
+      return true;
+    } catch (e) {
+      console.error("Import failed:", e);
+      return false;
+    }
+  }
+
   load() {
     const json = localStorage.getItem(CONFIG.SAVE_KEY);
     if (!json) return;

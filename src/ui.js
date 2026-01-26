@@ -33,7 +33,8 @@ export class UI {
       'closeSettingsBtn', 'fontSelect', 'crtStrengthSlider',
       'crtStrengthValue', 'crtScreen', 'crtCorners',
       'manualSaveBtn', 'autosaveToggleBtn', 'resetBtn', 'lastSaved',
-      'manageSavesBtn', 'manageSavesPanel', 'closeManageSavesBtn'
+      'manageSavesBtn', 'manageSavesPanel', 'closeManageSavesBtn',
+      'exportSaveBtn', 'importSaveBtn'
     ];
     
     ids.forEach(id => {
@@ -473,6 +474,45 @@ export class UI {
       if (this.elements.closeManageSavesBtn) {
           this.elements.closeManageSavesBtn.addEventListener('click', () => {
               if (this.elements.manageSavesPanel) this.elements.manageSavesPanel.classList.add('hidden');
+          });
+      }
+
+      if (this.elements.exportSaveBtn) {
+          this.elements.exportSaveBtn.addEventListener('click', () => {
+              const saveString = this.game.exportSaveString();
+              if (navigator.clipboard) {
+                  navigator.clipboard.writeText(saveString).then(() => {
+                      this.showToast("Save exported to clipboard!", "success");
+                      
+                      // Button feedback
+                      const originalText = this.elements.exportSaveBtn.innerText;
+                      this.elements.exportSaveBtn.innerText = "Copied!";
+                      setTimeout(() => {
+                          this.elements.exportSaveBtn.innerText = originalText;
+                      }, 2000);
+                      
+                  }).catch(err => {
+                      console.error('Failed to copy: ', err);
+                      // Fallback for some browsers or non-secure contexts
+                      this.showToast("Check console for save string", "info");
+                      console.log("SAVE STRING:", saveString);
+                  });
+              } else {
+                   this.showToast("Check console for save string", "info");
+                   console.log("SAVE STRING:", saveString);
+              }
+          });
+      }
+
+      if (this.elements.importSaveBtn) {
+          this.elements.importSaveBtn.addEventListener('click', () => {
+              const saveString = prompt("Paste your save string here:");
+              if (saveString) {
+                  const success = this.game.importSaveString(saveString);
+                  if (!success) {
+                      this.showToast("Invalid save string!", "error");
+                  }
+              }
           });
       }
   }
