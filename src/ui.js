@@ -11,6 +11,7 @@ export class UI {
     this.cacheElements();
     this.setupEventListeners();
     this.setupDevMenuEvents(); // Moving this logic here too
+    this.setupSettingsEvents();
     this.loadSettings();
 
     // Bind game callbacks
