@@ -56,3 +56,12 @@ npx http-server .
   - Add logic to `src/game.js`.
   - Add rendering code to `src/ui.js`.
 - **Building**: No build step is currently required (no Webpack/Vite), keeping it lightweight. If we add npm dependencies later, we will need a bundler.
+
+## v3 rewrite (2026-11-14)
+
+Rebuilt the game and its interface from scratch.
+
+- **Design.** Replaced the neon/Orbitron look with a warm dark palette, one amber accent, a condensed display face (Big Shoulders Display) and IBM Plex for body and numbers. Three-column desk / roster / dispatch layout that collapses to one column on phones.
+- **Gameplay.** Eight crew tiers, bulk hiring, a generated training-upgrade track, a contract board with three risk tiers that scales with your output, reputation as a permanent income bonus, offline progress (8 h cap), and a stats ledger.
+- **Engine.** Time-based simulation instead of fixed 1 s ticks, a single `recompute()` for multipliers, validated save hydration, and v2 save migration.
+- **Old open fixes.** The unmerged fixes on `story-ui` (settings validation, conflicting Escape handlers, CRT opacity) targeted the pre-module `game.js`. They're superseded: settings are now schema-validated in `settings.js`, dialogs use native `<dialog>` Escape handling, and the CRT warp effect was replaced by an optional scanline overlay.
