@@ -68,8 +68,9 @@ export class Game {
 
   step() {
     const now = performance.now();
-    // Clamp so a long background throttle can't produce one huge jump.
-    const dt = Math.min(5, (now - this.lastFrame) / 1000);
+    // A throttled or sleeping tab can deliver one long step. Pay it in full
+    // (up to the offline cap) so returning to the tab loses nothing.
+    const dt = Math.min(CONFIG.OFFLINE_CAP_S, Math.max(0, (now - this.lastFrame) / 1000));
     this.lastFrame = now;
     this.tick(dt);
   }
@@ -83,7 +84,8 @@ export class Game {
 
     const auto = this.derived.autoHuntMs;
     if (auto) {
-      this.autoHuntTimer += dt * 1000;
+      // The snitch only works while you're watching, same as offline rules.
+      this.autoHuntTimer += Math.min(dt, 5) * 1000;
       if (this.autoHuntTimer >= auto) {
         const n = Math.floor(this.autoHuntTimer / auto);
         this.autoHuntTimer -= n * auto;

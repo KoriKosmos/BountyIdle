@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { CREW, ALL_UPGRADES } from './data.js';
+import { CREW, ALL_UPGRADES, CONTRACT_TIERS } from './data.js';
 
 export const SAVE_VERSION = 3;
 
@@ -73,7 +73,9 @@ export function hydrate(raw) {
 
 function isOffer(o) {
   return !!o && typeof o === 'object'
-    && typeof o.id === 'string' && typeof o.name === 'string'
+    && typeof o.id === 'string' && typeof o.name === 'string' && typeof o.crime === 'string'
+    && (o.alias == null || typeof o.alias === 'string')
+    && CONTRACT_TIERS.some((t) => t.id === o.tier)
     && Number.isFinite(o.goal) && o.goal > 0
     && Number.isFinite(o.reward) && o.reward >= 0
     && Number.isFinite(o.rep);
