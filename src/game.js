@@ -171,6 +171,11 @@ export class Game {
     this.state.lifetime += amount;
   }
 
+  /** Returns credits the player already owned (a stake, a principal); not new earnings. */
+  refund(amount) {
+    this.state.credits += amount;
+  }
+
   spend(amount) {
     if (this.state.credits + 1e-9 < amount) return false;
     this.state.credits = Math.max(0, this.state.credits - amount);

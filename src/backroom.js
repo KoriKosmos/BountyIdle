@@ -218,7 +218,8 @@ export class BackRoom {
     if (!d.stake || d.rolls.length === 0) return 0;
     const pot = d.stake * d.mult;
     const profit = pot - d.stake;
-    this.game.earn(pot);
+    this.game.refund(d.stake);
+    this.game.earn(profit);
     d.won += profit;
     d.best = Math.max(d.best, d.mult);
     this.game.log(`Dock dice: walked away ×${d.mult.toFixed(1)}, +${fmt(profit)} cr.`, 'good');
@@ -282,7 +283,9 @@ export class BackRoom {
     const e = this.s.exchange;
     if (e.value <= 0) return 0;
     const pnl = e.value - e.basis;
-    this.game.earn(e.value);
+    // Only profit counts toward lifetime earnings; principal is just returned.
+    this.game.refund(Math.min(e.value, e.basis));
+    if (pnl > 0) this.game.earn(pnl);
     e.realised += pnl;
     this.game.log(`Exchange: sold out for ${fmt(e.value)} cr (${pnl >= 0 ? '+' : '−'}${fmt(Math.abs(pnl))}).`, pnl >= 0 ? 'good' : 'bad');
     const out = e.value;
