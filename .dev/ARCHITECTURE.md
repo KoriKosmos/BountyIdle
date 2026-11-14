@@ -1,96 +1,41 @@
-# System Architecture 🏗️
+# Architecture
 
-> **Note**: For a high-level overview of the project features, please see the [README](../README.md).
+> Feature overview: [README](../README.md).
 
-## 📂 Project Structure
+Plain ES modules, no framework, no build. Two objects do the work:
 
-The project has been refactored from a monolithic script into a modern, modular ES6 architecture.
-
-```text
-BountyIdle/
-├── index.html          # Entry point (Main UI shell)
-├── .dev/               # Development documentation & logs
-│   ├── ARCHITECTURE.md # This file
-│   └── DEV_LOG.md      # Chronological engineering log
-└── src/                # Source code
-    ├── main.js         # Bootstrapper
-    ├── game.js         # Core Game Logic (Loop, Rules)
-    ├── state.js        # Game State Data Model
-    ├── ui.js           # UI Rendering & Event Handling
-    ├── data.js         # Static Content (Crew, Upgrades, Contracts)
-    ├── config.js       # Global Constants
-    └── utils.js        # Helper Functions
+```
+         events (log, hunt, purchase, offers, change, offline, saved)
+  Game ───────────────────────────────────────────────────────────▶ UI
+   ▲                                                                │
+   └──────────── method calls (hunt, hire, buyUpgrade, takeContract)┘
 ```
 
-## 🛠️ Technical Design
+## Game (`src/game.js`)
 
-### 1. Data-Driven Design
+Owns the state object and every rule. Never touches the DOM.
 
-All game content is defined in `src/data.js` rather than hardcoded in logic. This generic implementation allows for easy expansion:
+- **Loop.** `setInterval` every 100 ms measures real elapsed time and calls `tick(dt)`. Everything is rate × dt, so a throttled background tab still earns correctly (each step is clamped to 5 s; longer gaps are covered by offline progress on next load).
+- **Derived values.** `recompute()` rebuilds all multipliers (income, crew rates, hunt value, cooldown, snitch interval, contract and reputation bonuses) from the upgrade list. It runs after every purchase, not every tick.
+- **Contracts.** Offers are sized from `power` (income plus a share of hunt output) times the tier's duration, so the board scales with you. While a contract is active, income and hunts go to `progress`; overflow on completion is paid out as credits.
+- **Persistence.** `save()` writes JSON to `localStorage`. `start()` reads it through `state.js#readSave`, applies offline progress and starts the loop.
 
-- **Crew**: Add new objects to `CREW_TYPES` to automatically generate shop items and passive income logic.
-- **Upgrades**: Defined in `UPGRADE_TYPES`, supporting scalable costs and custom effects.
+## State (`src/state.js`)
 
-### 2. State Management (`state.js`)
+`createState()` defines the save shape. `hydrate(raw)` type-checks every field of a parsed save and clamps it, so a corrupt or hand-edited save can't break the game. `migrateLegacy()` converts the v2 `{ state, crewCounts }` format.
 
-The `GameState` class is a pure data container used for serialization. It holds:
+## UI (`src/ui.js`)
 
-- Currency (Credits)
-- Progression Flags (Unlocks, Tutorials)
-- Inventory (Crew counts, Upgrades)
-- Active Contracts
+- Static markup lives in `index.html`. Crew rows are built once; upgrade cards and contract offers are rebuilt only when their set changes.
+- A `requestAnimationFrame` loop updates the hunt cooldown bar every frame and all text at about 10 Hz. `setText` skips writes when nothing changed.
+- Dialogs are native `<dialog>` elements, so focus trapping and <kbd>Esc</kbd> come from the browser.
 
-This clean separation ensures the **Save/Load system** is robust—we simply serialize this single object to `localStorage`.
+## Adding content
 
-### 3. Logic Layer (`game.js`)
+- **Crew:** add a row to `CREW` in `src/data.js`. Training upgrades for it are generated automatically.
+- **Upgrades:** add to `UPGRADES`. Supported effects: `incomeMult`, `huntMult`, `huntFromIncome`, `contractMult`, `repMult`, `crewMult`, `autoHunt`, `cooldownStep`. A new kind of effect needs a line in `Game#recompute`.
+- **Contracts:** tiers and name pools are in `CONTRACT_TIERS` and `CONTRACT_NAMES`.
 
-The `Game` class manages the simulation:
+## Debugging
 
-- **Game Loop**: A `setInterval` tick (1000ms) handles passive income and cooldown management.
-- **Input Validation**: All actions (hire, hunt, buy) check conditions (cost, cooldown) before mutating state.
-- **Observer Pattern**: When state changes, `notifyUI()` is called. This decouples logic from the view.
-
-### 4. Presentation Layer (`ui.js`)
-
-The `UI` class subscribes to game updates. It uses a simplistic "Render" patterns:
-
-- **Functional Rendering**: UI components (`updateCrew`, `updateUpgrades`) take the current state and rebuild/update the DOM.
-- **Event Delegation**: A single listener on container elements handles clicks for all dynamic items (hiring buttons), ensuring performance creates no memory leaks.
-
-## 🚧 Development Guide
-
-### How to Run
-
-Due to ES Module CORS policies, you must use a local server:
-
-```bash
-python3 -m http.server
-# OR
-npx http-server .
-```
-
-### Extending the Game
-
-#### Adding a New Crew Member
-
-1. Open `src/data.js`
-2. Add an entry to `CREW_TYPES`:
-   ```javascript
-   {
-     id: "master_hunter",
-     name: "Master Hunter",
-     baseCost: 5000,
-     scaling: 1.15,
-     perTick: 50,
-     count: 0,
-     revealed: false,
-     description: "An elite bounty hunter."
-   }
-   ```
-3. That's it! The UI and Game Loop will automatically handle it.
-
-#### Adding a New Upgrade
-
-1. Open `src/data.js`.
-2. Add to `UPGRADE_TYPES`.
-3. If it has a custom effect (e.g., unlocking a feature), add the handler in `src/game.js` inside `applyUpgradeEffects()` or the relevant action method.
+`window.game` is exposed. Useful calls: `game.earn(1e6)`, `game.hire('gunhand', 50)`, `game.refreshOffers(true)`, `game.state`.

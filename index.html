@@ -2,295 +2,271 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Bounty Office</title>
+    <meta name="description" content="An idle game about running a bounty office on a frontier station." />
+    <meta name="theme-color" content="#0e0d0b" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0d0b'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='%23f0a830' stroke-width='2.2'/%3E%3Cpath d='M16 3v7M16 22v7M3 16h7M22 16h7' stroke='%23f0a830' stroke-width='2.2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f0a830'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- Toast notifications -->
-    <div class="toast-container" id="toastContainer"></div>
+    <a class="skip-link" href="#huntBtn">Skip to the desk</a>
 
-    <!-- CRT Warping Effects -->
-    <div class="crt-screen" id="crtScreen"></div>
-    <div class="crt-corners" id="crtCorners"></div>
-
-    <!-- Main container -->
-    <div class="app-container">
-      <!-- Main game area -->
-      <main class="game-main">
-        <!-- Left sidebar - Crew -->
-        <aside class="sidebar sidebar-left">
-          <div class="panel">
-            <div class="panel-header">
-              <h2 class="panel-title">Crew</h2>
-            </div>
-            <div class="panel-content">
-              <div id="crewContainer"></div>
-            </div>
+    <div class="app">
+      <!-- ─── Top bar ─────────────────────────────────────────────── -->
+      <header class="topbar">
+        <div class="brand">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="9" />
+            <path d="M16 2v8M16 22v8M2 16h8M22 16h8" />
+            <circle class="dot" cx="16" cy="16" r="2" />
+          </svg>
+          <div class="brand-text">
+            <span class="brand-name">Bounty Office</span>
+            <span class="brand-sub">Kepler Ring · Dock 9 · Licence 00417</span>
           </div>
-        </aside>
+        </div>
 
-        <!-- Center - Main game -->
-        <section class="game-center">
-          <div class="panel">
-            <div class="panel-header">
-              <h2 class="panel-title gradient-text">Bounty Office</h2>
-              <div class="credits-display">
-                <span class="credits-label">Credits:</span>
-                <span class="credits-value" id="creditsDisplay">0</span>
-              </div>
-              <button id="settingsBtn" class="btn btn-control" title="Settings">
-                <span class="settings-icon">⚙</span>
+        <dl class="readouts">
+          <div class="readout readout-credits">
+            <dt>Credits</dt>
+            <dd><span id="credits">0</span><small>cr</small></dd>
+          </div>
+          <div class="readout">
+            <dt>Income</dt>
+            <dd><span id="rate">0</span><small>/s</small></dd>
+          </div>
+          <div class="readout" id="repReadout" hidden>
+            <dt>Reputation</dt>
+            <dd><span id="rep">0</span><small id="repBonus">+0%</small></dd>
+          </div>
+        </dl>
+
+        <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>
+        </button>
+      </header>
+
+      <!-- ─── Main ────────────────────────────────────────────────── -->
+      <main class="layout">
+        <!-- Desk: hunting + contracts -->
+        <section class="col col-desk" aria-label="The desk">
+          <article class="panel">
+            <header class="panel-head">
+              <h2>The Desk</h2>
+              <span class="panel-meta" id="huntMeta"></span>
+            </header>
+
+            <div class="hunt-wrap">
+              <button class="hunt" id="huntBtn" type="button">
+                <span class="hunt-kicker" id="huntKicker">Petty bounty</span>
+                <span class="hunt-title" id="huntTitle">Run down a skip</span>
+                <span class="hunt-pay">+<span id="huntValue">1</span> cr</span>
+                <kbd class="hunt-key" aria-hidden="true">Space</kbd>
+                <span class="hunt-charge" aria-hidden="true"><span id="huntCharge"></span></span>
               </button>
+              <div class="floaters" id="floaters" aria-hidden="true"></div>
             </div>
-            <div class="panel-content">
-              <!-- Main action area -->
-              <div class="action-area">
-                <div class="action-row">
-                  <button
-                    id="huntBtn"
-                    class="btn btn-primary action-btn"
-                    data-action="hunt"
-                    data-cooldown="action"
-                  >
-                    <span class="btn-text">Hunt petty bounty</span>
-                    <span class="btn-value" id="huntValue">+1 credit</span>
-                  </button>
-                </div>
 
-                <div class="action-row">
-                  <button
-                    id="contractBtn"
-                    class="btn btn-secondary action-btn hidden"
-                    data-action="contract"
-                    data-cooldown="action"
-                  >
-                    <span class="btn-text">Advance contract</span>
-                  </button>
+            <dl class="facts">
+              <div><dt>Cooldown</dt><dd id="factCooldown">1.00s</dd></div>
+              <div><dt>Snitch</dt><dd id="factAuto">Not on payroll</dd></div>
+              <div><dt>Hunts</dt><dd id="factHunts">0</dd></div>
+            </dl>
+          </article>
+
+          <article class="panel board" id="board">
+            <header class="panel-head">
+              <h2>Contract Board</h2>
+              <span class="panel-meta" id="boardMeta"></span>
+            </header>
+
+            <div class="board-locked" id="boardLocked">
+              <p>The guild won’t post real work to an office this small.</p>
+              <div class="meter"><span id="boardLockedBar"></span></div>
+              <p class="board-locked-count" id="boardLockedCount">0 / 10 crew</p>
+            </div>
+
+            <div class="active-contract" id="activeContract" hidden>
+              <div class="active-head">
+                <div>
+                  <span class="tag" id="activeTier"></span>
+                  <h3 id="activeName"></h3>
+                  <p class="active-crime" id="activeCrime"></p>
                 </div>
+                <button class="text-btn danger" id="abandonBtn" type="button">Drop</button>
               </div>
+              <div class="meter meter-lg"><span id="activeBar"></span></div>
+              <div class="active-foot">
+                <span><b id="activeProgress">0</b> / <span id="activeGoal">0</span></span>
+                <span id="activeEta"></span>
+              </div>
+              <p class="active-note">All crew output and hunts go to this contract until it closes.</p>
+            </div>
 
-              <!-- Contracts section -->
-              <div id="contractsSection" class="contracts-section hidden">
-                <div class="contracts-header">
-                  <h3 class="contracts-title">Active Contracts</h3>
-                  <div class="contracts-hint">
-                    <span class="warning-text"
-                      >⚠️ Contracts take time to complete!</span
-                    >
-                  </div>
-                </div>
-                <div id="contractsContainer"></div>
+            <ul class="offers" id="offers" hidden></ul>
+          </article>
+        </section>
+
+        <!-- Roster: crew / upgrades / ledger -->
+        <section class="col col-roster panel" aria-label="Office">
+          <div class="tabs" role="tablist" aria-label="Office sections">
+            <button role="tab" id="tab-crew" aria-controls="pane-crew" aria-selected="true" data-tab="crew">Crew <span class="tab-count" id="crewCount">0</span></button>
+            <button role="tab" id="tab-upgrades" aria-controls="pane-upgrades" aria-selected="false" data-tab="upgrades" tabindex="-1">Upgrades <span class="tab-dot" id="upgradeDot" hidden></span></button>
+            <button role="tab" id="tab-ledger" aria-controls="pane-ledger" aria-selected="false" data-tab="ledger" tabindex="-1">Ledger</button>
+          </div>
+
+          <div class="pane" role="tabpanel" id="pane-crew" aria-labelledby="tab-crew">
+            <div class="pane-tools">
+              <span class="pane-hint">Hire</span>
+              <div class="seg" role="radiogroup" aria-label="Hire amount" id="buyAmount">
+                <button role="radio" aria-checked="true" data-amount="1">×1</button>
+                <button role="radio" aria-checked="false" data-amount="10">×10</button>
+                <button role="radio" aria-checked="false" data-amount="max">Max</button>
               </div>
             </div>
+            <ol class="crew-list" id="crewList"></ol>
+          </div>
+
+          <div class="pane" role="tabpanel" id="pane-upgrades" aria-labelledby="tab-upgrades" hidden>
+            <div class="upgrade-groups" id="upgradeList"></div>
+            <p class="empty" id="upgradeEmpty">Nothing on the market yet. Earn a little first.</p>
+            <details class="owned" id="ownedWrap" hidden>
+              <summary>Owned <span id="ownedCount"></span></summary>
+              <ul class="owned-list" id="ownedList"></ul>
+            </details>
+          </div>
+
+          <div class="pane" role="tabpanel" id="pane-ledger" aria-labelledby="tab-ledger" hidden>
+            <dl class="ledger" id="ledger"></dl>
           </div>
         </section>
 
-        <!-- Right sidebar - Upgrades -->
-        <aside class="sidebar sidebar-right">
-          <div class="panel">
-            <div class="panel-header">
-              <h2 class="panel-title">Upgrades</h2>
-            </div>
-            <div class="panel-content">
-              <div id="upgradesContainer"></div>
-            </div>
-          </div>
-        </aside>
+        <!-- Dispatch log -->
+        <section class="col col-log panel" aria-label="Dispatch log">
+          <header class="panel-head">
+            <h2>Dispatch</h2>
+            <span class="panel-meta live"><i></i>Live</span>
+          </header>
+          <ol class="log" id="log" aria-live="polite"></ol>
+        </section>
       </main>
 
-      <!-- Dev Menu Panel -->
-      <div id="devMenuPanel" class="dev-menu-panel hidden">
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Developer Menu</h2>
-            <button id="closeDevMenuBtn" class="btn btn-close">×</button>
-          </div>
-          <div class="panel-content">
-            <div class="dev-section">
-              <h3>Resources</h3>
-              <div class="dev-controls">
-                <button class="btn btn-dev-action" data-dev-action="addCredits">
-                  +1000 Credits
-                </button>
-                <button class="btn btn-dev-action" data-dev-action="addCrew">
-                  +10 Crew
-                </button>
-                <button
-                  class="btn btn-dev-action"
-                  data-dev-action="maxUpgrades"
-                >
-                  Max Upgrades
-                </button>
-                <button
-                  class="btn btn-dev-action"
-                  data-dev-action="completeContract"
-                >
-                  Complete Contract
-                </button>
-              </div>
-            </div>
-
-            <div class="dev-section">
-              <h3>Game State</h3>
-              <div class="dev-info">
-                <div>Ticks: <span id="devTicks">0</span></div>
-                <div>Unbanked: <span id="devUnbanked">0</span></div>
-                <div>
-                  Contract Progress: <span id="devContractProgress">0</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="dev-section">
-              <h3>Debug</h3>
-              <div class="dev-controls">
-                <button
-                  class="btn btn-dev-action"
-                  data-dev-action="toggleAutosave"
-                >
-                  Toggle Autosave
-                </button>
-                <button class="btn btn-dev-action" data-dev-action="forceSave">
-                  Force Save
-                </button>
-                <button class="btn btn-dev-action" data-dev-action="exportSave">
-                  Export Save
-                </button>
-                <button class="btn btn-dev-action" data-dev-action="importSave">
-                  Import Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Settings Menu Panel -->
-      <div id="settingsMenuPanel" class="settings-menu-panel hidden">
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Settings</h2>
-            <button id="closeSettingsBtn" class="btn btn-close">×</button>
-          </div>
-          <div class="panel-content">
-            <div class="settings-section">
-              <h3>Typography</h3>
-              <div class="setting-item">
-                <label for="fontSelect">Text Font:</label>
-                <select id="fontSelect" class="setting-select">
-                  <option value="retro">
-                    Retro-Futuristic (Orbitron + Share Tech Mono)
-                  </option>
-                  <option value="original">Original Font Stack</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="settings-section">
-              <h3>Visual Effects</h3>
-              <div class="setting-item">
-                <label for="crtStrengthSlider">CRT Filter Strength:</label>
-                <div class="slider-container">
-                  <input
-                    type="range"
-                    id="crtStrengthSlider"
-                    class="setting-slider"
-                    min="0"
-                    max="100"
-                    value="50"
-                  />
-                  <span class="slider-value" id="crtStrengthValue">50%</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="settings-section">
-              <h3>Actions</h3>
-              <div class="settings-controls">
-                <button class="btn btn-secondary" id="resetSettingsBtn">
-                  Reset to Defaults
-                </button>
-                <button class="btn btn-primary" id="applySettingsBtn">
-                  Apply Settings
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Manage Saves Panel -->
-      <div id="manageSavesPanel" class="settings-menu-panel hidden">
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Manage Saves</h2>
-            <button id="closeManageSavesBtn" class="btn btn-close">×</button>
-          </div>
-          <div class="panel-content">
-            <div class="settings-section">
-              <h3>Save & Reset</h3>
-              <p class="text-muted" style="margin-bottom: 15px">
-                Manually save your progress or reset your save file to start
-                over.
-              </p>
-              <div
-                class="settings-controls"
-                style="
-                  justify-content: space-between;
-                  flex-direction: column;
-                  gap: 10px;
-                "
-              >
-                <button
-                  id="manualSaveBtn"
-                  class="btn btn-control"
-                  style="width: 100%; justify-content: center"
-                >
-                  Manual Save
-                </button>
-                <button
-                  id="exportSaveBtn"
-                  class="btn btn-control"
-                  style="width: 100%; justify-content: center"
-                >
-                  Export Save
-                </button>
-                <button
-                  id="importSaveBtn"
-                  class="btn btn-control"
-                  style="width: 100%; justify-content: center"
-                >
-                  Import Save
-                </button>
-                <button
-                  id="resetBtn"
-                  class="btn btn-control btn-danger"
-                  style="width: 100%; justify-content: center"
-                >
-                  Reset Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Save controls -->
-      <div class="save-controls">
-        <div class="save-controls-left">
-          <button id="autosaveToggleBtn" class="btn btn-control btn-active">
-            Autosave ON
-          </button>
-          <button id="manageSavesBtn" class="btn btn-control">
-            Manage Saves
-          </button>
-        </div>
-        <div class="last-saved" id="lastSaved">Last saved just now</div>
-      </div>
+      <footer class="statusbar">
+        <button class="status-item" id="autosaveBtn" type="button" aria-pressed="true">
+          <i class="status-dot"></i><span id="autosaveLabel">Autosave on</span>
+        </button>
+        <span class="status-item" id="savedAgo">Saved just now</span>
+        <button class="status-item link" id="saveNowBtn" type="button">Save now</button>
+        <span class="status-spacer"></span>
+        <span class="status-item muted" id="version"></span>
+      </footer>
     </div>
 
-    <!-- Scripts -->
+    <!-- ─── Dialogs ───────────────────────────────────────────────── -->
+    <dialog class="dialog" id="settingsDialog" aria-labelledby="settingsTitle">
+      <form method="dialog" class="dialog-body">
+        <header class="dialog-head">
+          <h2 id="settingsTitle">Settings</h2>
+          <button class="icon-btn" value="close" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </header>
+
+        <fieldset class="field">
+          <legend>Number format</legend>
+          <div class="seg" data-setting="numbers">
+            <button type="button" data-value="short">1.24M</button>
+            <button type="button" data-value="scientific">1.24e6</button>
+            <button type="button" data-value="full">1,240,000</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Motion</legend>
+          <div class="seg" data-setting="motion">
+            <button type="button" data-value="auto">System</button>
+            <button type="button" data-value="full">Full</button>
+            <button type="button" data-value="reduced">Reduced</button>
+          </div>
+        </fieldset>
+
+        <label class="switch-row">
+          <span><b>Scanlines</b><small>A faint monitor texture over the office.</small></span>
+          <input type="checkbox" class="switch" data-setting="scanlines" />
+        </label>
+        <label class="switch-row">
+          <span><b>Keyboard shortcuts</b><small>Space or H to hunt · 1–3 to switch tabs.</small></span>
+          <input type="checkbox" class="switch" data-setting="hotkeys" />
+        </label>
+
+        <section class="field">
+          <h3 class="field-title">Save data</h3>
+          <div class="btn-row">
+            <button type="button" class="btn" id="exportBtn">Export</button>
+            <button type="button" class="btn" id="importBtn">Import</button>
+            <button type="button" class="btn danger" id="resetBtn">Wipe save…</button>
+          </div>
+        </section>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="saveDialog" aria-labelledby="saveTitle">
+      <form method="dialog" class="dialog-body">
+        <header class="dialog-head">
+          <h2 id="saveTitle">Export save</h2>
+          <button class="icon-btn" value="close" aria-label="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </header>
+        <p class="dialog-text" id="saveText"></p>
+        <textarea id="saveField" class="save-field" rows="6" spellcheck="false" autocomplete="off"></textarea>
+        <p class="form-error" id="saveError" role="alert"></p>
+        <div class="btn-row end">
+          <button type="button" class="btn" value="cancel" id="saveCancel">Cancel</button>
+          <button type="button" class="btn primary" id="saveConfirm">Copy</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="resetDialog" aria-labelledby="resetTitle">
+      <form method="dialog" class="dialog-body">
+        <header class="dialog-head">
+          <h2 id="resetTitle">Wipe save?</h2>
+        </header>
+        <p class="dialog-text">This deletes your office, crew and reputation. It can’t be undone. Export a copy first if you might want it back.</p>
+        <label class="confirm-label" for="resetField">Type <b>WIPE</b> to confirm</label>
+        <input id="resetField" class="text-input" autocomplete="off" spellcheck="false" />
+        <div class="btn-row end">
+          <button class="btn" value="cancel">Keep my office</button>
+          <button type="button" class="btn danger solid" id="resetConfirm" disabled>Wipe everything</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="offlineDialog" aria-labelledby="offlineTitle">
+      <form method="dialog" class="dialog-body">
+        <header class="dialog-head">
+          <h2 id="offlineTitle">While you were out</h2>
+        </header>
+        <p class="dialog-text" id="offlineText"></p>
+        <p class="offline-total">+<span id="offlineAmount">0</span> <small>cr</small></p>
+        <p class="dialog-note" id="offlineNote"></p>
+        <div class="btn-row end">
+          <button class="btn primary" value="ok" autofocus>Back to work</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
     <script type="module" src="src/main.js"></script>
   </body>
 </html>

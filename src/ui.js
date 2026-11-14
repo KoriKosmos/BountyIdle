@@ -1,589 +1,642 @@
 import { CONFIG } from './config.js';
-import { formatNumber } from './utils.js';
+import { CREW, ALL_UPGRADES, CONTRACT_TIERS } from './data.js';
+import { fmt, duration, clock } from './format.js';
+import { loadSettings, saveSettings, applySettings } from './settings.js';
+import { h, $, setText, toggle } from './dom.js';
+
+const TIER_BY_ID = Object.fromEntries(CONTRACT_TIERS.map((t) => [t.id, t]));
+const TEXT_HZ = 10;
+
+const HUNT_COPY = [
+  { at: 0,      kicker: 'Petty bounty',   title: 'Run down a skip' },
+  { at: 50,     kicker: 'Small fry',      title: 'Collar a fare-dodger' },
+  { at: 1e3,    kicker: 'Local warrant',  title: 'Shake down the docks' },
+  { at: 5e4,    kicker: 'Ring warrant',   title: 'Raid a smuggler’s berth' },
+  { at: 2e6,    kicker: 'Sector warrant', title: 'Board a runner mid-burn' },
+  { at: 1e8,    kicker: 'Guild mandate',  title: 'Close the net' },
+];
 
 export class UI {
   constructor(game) {
     this.game = game;
-    this.elements = {};
+    this.settings = loadSettings();
+    this.buyAmount = 1;
+    this.tab = 'crew';
+    this.crewRows = new Map();
+    this.upgradeSig = '';
+    this.lastText = 0;
+    this.lastAutoFloat = 0;
   }
 
   init() {
-    this.cacheElements();
-    this.setupEventListeners();
-    this.setupDevMenuEvents(); // Moving this logic here too
-    this.setupSettingsEvents();
-    this.loadSettings();
+    applySettings(this.settings);
+    this.game.setAutosave(this.settings.autosave);
 
-    // Bind game callbacks
-    this.game.setCallbacks(
-      (gameInstance) => this.render(gameInstance),
-      (msg, type) => this.showToast(msg, type)
+    this.buildCrew();
+    this.bindDesk();
+    this.bindTabs();
+    this.bindStatus();
+    this.bindSettings();
+    this.bindHotkeys();
+
+    const g = this.game;
+    g.on('log', (e) => this.addLog(e));
+    g.on('change', () => this.structureDirty = true);
+    g.on('offers', () => this.renderBoard());
+    g.on('hunt', (e) => this.onHunt(e));
+    g.on('purchase', (e) => this.onPurchase(e));
+    g.on('contract-complete', (e) => this.toast(`Contract closed · +${fmt(e.reward)} cr`, 'good'));
+    g.on('unlock', () => this.toast('Contract board unlocked', 'good'));
+    g.on('offline', (e) => this.showOffline(e));
+    g.on('saved', () => this.renderSaved());
+    g.on('reset', () => { this.structureDirty = true; this.renderBoard(); });
+
+    setText($('version'), `v${CONFIG.VERSION}`);
+    // First paint happens on the first frame, after the game has loaded.
+    this.structureDirty = true;
+    requestAnimationFrame((t) => this.frame(t));
+  }
+
+  // ── frame loop ────────────────────────────────────────────────────────
+
+  frame(t) {
+    this.renderCharge();
+    if (this.structureDirty) {
+      this.structureDirty = false;
+      this.renderStructure();
+      this.renderText();
+    } else if (t - this.lastText > 1000 / TEXT_HZ) {
+      this.lastText = t;
+      this.renderText();
+    }
+    requestAnimationFrame((n) => this.frame(n));
+  }
+
+  renderStructure() {
+    this.renderCrewVisibility();
+    this.renderUpgrades();
+    this.renderBoard();
+  }
+
+  renderText() {
+    const g = this.game, s = g.state, d = g.derived;
+
+    setText($('credits'), fmt(Math.floor(s.credits)));
+    setText($('rate'), fmt(d.income, 1));
+    toggle($('repReadout'), 'hidden', s.rep === 0);
+    setText($('rep'), fmt(s.rep));
+    setText($('repBonus'), `+${fmt((d.repBonus - 1) * 100, 0)}%`);
+    document.title = `${fmt(Math.floor(s.credits))} cr · Bounty Office`;
+
+    this.renderDesk();
+    this.renderCrew();
+    this.renderUpgradeAffordability();
+    this.renderActiveContract();
+    this.renderBoardMeta();
+    if (this.tab === 'ledger') this.renderLedger();
+    this.renderSaved();
+  }
+
+  // ── desk ──────────────────────────────────────────────────────────────
+
+  bindDesk() {
+    $('huntBtn').addEventListener('click', () => this.game.hunt());
+    $('abandonBtn').addEventListener('click', () => {
+      const btn = $('abandonBtn');
+      if (btn.dataset.armed) {
+        this.game.abandonContract();
+      } else {
+        btn.dataset.armed = '1';
+        btn.textContent = 'Drop it?';
+        setTimeout(() => { delete btn.dataset.armed; btn.textContent = 'Drop'; }, 2500);
+      }
+    });
+  }
+
+  renderCharge() {
+    const g = this.game;
+    const charge = g.huntCharge;
+    $('huntCharge').style.transform = `scaleX(${charge})`;
+    toggle($('huntBtn'), 'data-cooling', charge < 1);
+  }
+
+  renderDesk() {
+    const g = this.game, s = g.state, d = g.derived;
+    const contract = s.contract.active;
+    const copy = HUNT_COPY.filter((c) => s.lifetime >= c.at).pop();
+
+    setText($('huntKicker'), contract ? 'On contract' : copy.kicker);
+    setText($('huntTitle'), contract ? `Chase ${contract.name.split(' ')[0]}` : copy.title);
+    setText($('huntValue'), fmt(g.huntValue, 1));
+    setText($('huntMeta'), contract ? 'Hunts feed the contract' : '');
+
+    setText($('factCooldown'), `${(d.cooldownMs / 1000).toFixed(2)}s`);
+    setText($('factAuto'), d.autoHuntMs ? `Every ${(d.autoHuntMs / 1000).toFixed(2)}s` : 'Not on payroll');
+    setText($('factHunts'), fmt(s.stats.hunts + s.stats.autoHunts));
+  }
+
+  onHunt({ value, auto }) {
+    const now = performance.now();
+    if (auto) {
+      if (now - this.lastAutoFloat < 220) return;
+      this.lastAutoFloat = now;
+    } else {
+      const btn = $('huntBtn');
+      btn.classList.remove('pulse');
+      void btn.offsetWidth; // restart the animation
+      btn.classList.add('pulse');
+    }
+    const layer = $('floaters');
+    const el = h('span', { class: `floater${auto ? ' auto' : ''}` }, `+${fmt(value, 1)}`);
+    el.style.left = `${18 + Math.random() * 64}%`;
+    layer.append(el);
+    el.addEventListener('animationend', () => el.remove());
+    if (layer.childElementCount > 14) layer.firstElementChild.remove();
+  }
+
+  // ── crew ──────────────────────────────────────────────────────────────
+
+  buildCrew() {
+    const list = $('crewList');
+    for (const c of CREW) {
+      const refs = {};
+      const row = h('li', { class: 'crew', hidden: true },
+        refs.btn = h('button', { class: 'crew-btn', type: 'button', onclick: () => this.hire(c.id) },
+          h('span', { class: 'crew-info' },
+            h('span', { class: 'crew-line' },
+              h('span', { class: 'crew-name' }, c.name),
+              refs.owned = h('span', { class: 'crew-owned' }, '0'),
+            ),
+            h('span', { class: 'crew-blurb' }, c.blurb),
+            refs.yield = h('span', { class: 'crew-yield' }),
+          ),
+          h('span', { class: 'crew-buy' },
+            refs.cost = h('span', { class: 'crew-cost' }),
+            refs.qty = h('span', { class: 'crew-qty' }),
+          ),
+        ),
+      );
+      const teaser = h('li', { class: 'crew crew-locked', hidden: true },
+        h('span', { class: 'crew-info' },
+          h('span', { class: 'crew-name' }, 'Unknown applicant'),
+          refs.lockHint = h('span', { class: 'crew-blurb' }),
+        ),
+      );
+      list.append(row, teaser);
+      this.crewRows.set(c.id, { row, teaser, ...refs });
+    }
+
+    $('buyAmount').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-amount]');
+      if (!b) return;
+      this.buyAmount = b.dataset.amount === 'max' ? 'max' : Number(b.dataset.amount);
+      for (const x of $('buyAmount').children) x.setAttribute('aria-checked', String(x === b));
+      this.renderCrew();
+    });
+  }
+
+  hire(id) {
+    const n = this.game.hire(id, this.buyAmount);
+    if (!n) this.shake(this.crewRows.get(id).btn);
+  }
+
+  renderCrewVisibility() {
+    const s = this.game.state;
+    let teaserShown = false;
+    for (const c of CREW) {
+      const r = this.crewRows.get(c.id);
+      const visible = s.seen.crew[c.id] || s.crew[c.id] > 0;
+      toggle(r.row, 'hidden', !visible);
+      const showTeaser = !visible && !teaserShown;
+      toggle(r.teaser, 'hidden', !showTeaser);
+      if (showTeaser) {
+        teaserShown = true;
+        setText(r.lockHint, `Shows up once you’ve earned ${fmt(Math.ceil(c.cost * 0.6))} cr in total.`);
+      }
+    }
+  }
+
+  renderCrew() {
+    const g = this.game, s = g.state, d = g.derived;
+    setText($('crewCount'), fmt(g.crewTotal));
+    for (const c of CREW) {
+      const r = this.crewRows.get(c.id);
+      if (r.row.hidden) continue;
+      const owned = s.crew[c.id];
+      const n = this.buyAmount === 'max' ? Math.max(1, g.maxAffordable(c.id)) : this.buyAmount;
+      const cost = g.crewCost(c.id, n);
+      const affordable = s.credits >= cost;
+      const each = d.crewRates[c.id];
+      const total = each * owned;
+      const share = d.income > 0 ? (total / d.income) * 100 : 0;
+
+      setText(r.owned, fmt(owned));
+      setText(r.cost, `${fmt(cost)} cr`);
+      setText(r.qty, `Hire ×${fmt(n)}`);
+      setText(r.yield, owned
+        ? `${fmt(each, 2)}/s each · ${fmt(total, 1)}/s · ${share.toFixed(0)}% of income`
+        : `${fmt(each, 2)}/s each`);
+      r.btn.classList.toggle('affordable', affordable);
+      r.btn.setAttribute('aria-disabled', String(!affordable));
+      toggle(r.row, 'data-mult', d.crewMult[c.id] > 1);
+    }
+  }
+
+  // ── upgrades ──────────────────────────────────────────────────────────
+
+  availableUpgrades() {
+    const g = this.game, s = g.state;
+    return ALL_UPGRADES
+      .filter((u) => s.seen.upgrades[u.id] && !g.upgradeMaxed(u) && g.meetsReq(u))
+      .sort((a, b) => g.upgradeCost(a) - g.upgradeCost(b));
+  }
+
+  renderUpgrades() {
+    const g = this.game;
+    const list = this.availableUpgrades();
+    const owned = ALL_UPGRADES.filter((u) => g.upgradeMaxed(u));
+    const sig = list.map((u) => `${u.id}:${g.upgradeLevel(u.id)}`).join() + '|' + owned.length;
+    if (sig === this.upgradeSig) return;
+    this.upgradeSig = sig;
+
+    const wrap = $('upgradeList');
+    wrap.replaceChildren(...list.map((u) => this.upgradeCard(u)));
+    toggle($('upgradeEmpty'), 'hidden', list.length > 0);
+
+    toggle($('ownedWrap'), 'hidden', owned.length === 0);
+    setText($('ownedCount'), owned.length);
+    $('ownedList').replaceChildren(...owned.map((u) =>
+      h('li', {}, h('b', {}, u.name), h('span', {}, u.desc))));
+  }
+
+  upgradeCard(u) {
+    const g = this.game;
+    const lvl = g.upgradeLevel(u.id);
+    const pips = u.kind === 'repeat'
+      ? h('span', { class: 'pips', 'aria-label': `Level ${lvl} of ${u.max}` },
+          ...Array.from({ length: u.max }, (_, i) => h('i', { class: i < lvl ? 'on' : '' })))
+      : h('span', { class: 'once' }, 'One-off');
+    return h('button', {
+      class: 'upgrade', type: 'button', dataset: { id: u.id, group: u.group.toLowerCase() },
+      onclick: (e) => { if (!g.buyUpgrade(u.id)) this.shake(e.currentTarget); },
+    },
+      h('span', { class: 'up-top' },
+        h('span', { class: 'up-group' }, u.group),
+        h('span', { class: 'up-cost' }, `${fmt(g.upgradeCost(u))} cr`),
+      ),
+      h('span', { class: 'up-name' }, u.name),
+      h('span', { class: 'up-desc' }, u.desc),
+      pips,
     );
-
-    // Initial render
-    this.render(this.game);
-    this.startCooldownVisualLoop();
   }
 
-  cacheElements() {
-    const ids = [
-      'creditsDisplay', 'crewContainer', 'upgradesContainer', 
-      'contractsSection', 'contractsContainer', 'huntBtn', 
-      'huntValue', 'contractBtn', 'toastContainer',
-      'devMenuPanel', 'settingsMenuPanel', 'settingsBtn',
-      'closeSettingsBtn', 'fontSelect', 'crtStrengthSlider',
-      'crtStrengthValue', 'crtScreen', 'crtCorners',
-      'manualSaveBtn', 'autosaveToggleBtn', 'resetBtn', 'lastSaved',
-      'manageSavesBtn', 'manageSavesPanel', 'closeManageSavesBtn',
-      'exportSaveBtn', 'importSaveBtn'
-    ];
-    
-    ids.forEach(id => {
-      this.elements[id] = document.getElementById(id);
-    });
-  }
-
-  render(game) {
-    this.updateCredits(game);
-    this.updateCrew(game);
-    this.updateUpgrades(game);
-    this.updateContracts(game);
-    this.updateActionButtons(game);
-    this.updateLastSaved(game);
-  }
-
-  // --- Specific Update Methods ---
-
-  updateCredits(game) {
-    if (this.elements.creditsDisplay) {
-      this.elements.creditsDisplay.textContent = formatNumber(game.state.credits);
+  renderUpgradeAffordability() {
+    const g = this.game, credits = g.state.credits;
+    let any = false;
+    for (const card of $('upgradeList').children) {
+      const u = ALL_UPGRADES.find((x) => x.id === card.dataset.id);
+      const ok = credits >= g.upgradeCost(u);
+      card.classList.toggle('affordable', ok);
+      card.setAttribute('aria-disabled', String(!ok));
+      any ||= ok;
     }
+    toggle($('upgradeDot'), 'hidden', !any || this.tab === 'upgrades');
   }
 
-  updateCrew(game) {
-    if (!this.elements.crewContainer) return;
-    
-    // Track which elements are active in this render cycle to remove stale ones
-    const activeIds = new Set();
+  // ── contracts ─────────────────────────────────────────────────────────
 
-    for (const crew of game.crewTypes) {
-       let shouldShow = crew.revealed;
-       if (crew.id === 'snitch') {
-         const reduceCooldownCount = game.state.upgrades.reduceCooldown || 0;
-         shouldShow = crew.revealed || reduceCooldownCount >= CONFIG.REDUCE_CD_MAX_COUNT;
-       } else {
-         shouldShow = crew.revealed || game.state.credits >= game.getCrewCost(crew);
-       }
-       
-       if (!shouldShow) continue;
-       
-       if (!crew.revealed) crew.revealed = true;
+  renderBoard() {
+    const g = this.game, c = g.state.contract;
+    $('board').classList.toggle('is-locked', !c.unlocked);
+    toggle($('boardLocked'), 'hidden', c.unlocked);
+    toggle($('activeContract'), 'hidden', !c.active);
+    toggle($('offers'), 'hidden', !c.unlocked);
 
-       activeIds.add(crew.id);
-       
-       // Check if element exists
-       let section = this.elements.crewContainer.querySelector(`.crew-section[data-crew-id="${crew.id}"]`);
-       
-       const cost = game.getCrewCost(crew);
-       const canAfford = game.state.credits >= cost;
-       const canClick = game.canClick('hire');
-       const disabled = !(canAfford && canClick);
-       
-       let description = crew.description;
-       if (crew.id === 'snitch') {
-         const interval = game.getSnitchIntervalTicks(crew);
-         const tickText = Math.abs(interval - CONFIG.SINGLE_TICK_THRESHOLD) < CONFIG.TICK_INTERVAL_TOLERANCE ? "tick" : "ticks";
-         description = `Autoclicks every ${interval.toFixed(1)} ${tickText}`;
-       }
-
-       if (!section) {
-           // Create new
-           section = document.createElement('div');
-           section.className = 'crew-section';
-           section.setAttribute('data-crew-id', crew.id);
-           section.innerHTML = `
-           <div class="crew-header">
-             <h3 class="crew-name">${crew.name}</h3>
-             <div class="crew-stats">
-               <span class="crew-income-display"></span>
-               <span class="crew-description-display"></span>
-               <span class="crew-count-display"></span>
-             </div>
-           </div>
-           <div class="crew-actions">
-             <button class="btn purchase-btn" data-crew-id="${crew.id}" data-cooldown="hire">
-               Hire ${crew.name}
-             </button>
-             <div class="crew-cost">
-               <span class="text-secondary crew-cost-display"></span>
-             </div>
-           </div>
-           `;
-           this.elements.crewContainer.appendChild(section);
-       }
-
-       // Update Content
-       const incomeDisplay = section.querySelector('.crew-income-display');
-       if (incomeDisplay) {
-            incomeDisplay.textContent = crew.perTick > 0 ? `+${(crew.count * crew.perTick).toFixed(1)} credits/tick` : '';
-            incomeDisplay.style.display = crew.perTick > 0 ? '' : 'none';
-       }
-       
-       const descDisplay = section.querySelector('.crew-description-display');
-       if (descDisplay) descDisplay.textContent = description;
-       
-       const countDisplay = section.querySelector('.crew-count-display');
-       if (countDisplay) countDisplay.textContent = `Hired: ${crew.count}`;
-       
-       const costDisplay = section.querySelector('.crew-cost-display');
-       if (costDisplay) costDisplay.textContent = `Cost: ${cost}`;
-
-       // Update Button State
-       const btn = section.querySelector('button');
-       if (btn) {
-           if (disabled) btn.setAttribute('disabled', '');
-           else btn.removeAttribute('disabled');
-           
-           if (!canAfford) btn.setAttribute('data-cost-blocked', 'true');
-           else btn.removeAttribute('data-cost-blocked');
-       }
+    if (c.active) {
+      const t = TIER_BY_ID[c.active.tier];
+      setText($('activeTier'), t.label);
+      $('activeTier').dataset.tier = t.id;
+      setText($('activeName'), c.active.alias ? `${c.active.name} “${c.active.alias}”` : c.active.name);
+      setText($('activeCrime'), c.active.crime);
     }
 
-    // Remove stale elements
-    const existing = this.elements.crewContainer.querySelectorAll('.crew-section');
-    existing.forEach(el => {
-        if (!activeIds.has(el.getAttribute('data-crew-id'))) {
-            el.remove();
-        }
-    });
-
+    $('offers').replaceChildren(...c.offers.map((o) => this.offerCard(o, !!c.active)));
   }
 
-  updateUpgrades(game) {
-    if (!this.elements.upgradesContainer) return;
-    
-    const activeIds = new Set();
-
-    for (const upgrade of game.upgradeTypes) {
-      const count = game.state.upgrades[upgrade.id] || 0;
-      const alreadyRevealed = game.state.revealedUpgrades[upgrade.id];
-      const shouldShow = alreadyRevealed || count > 0 || game.state.credits >= upgrade.baseCost;
-
-      if (!shouldShow) continue;
-
-      if (!alreadyRevealed) {
-        game.state.revealedUpgrades[upgrade.id] = true; 
-      }
-      
-      activeIds.add(upgrade.id);
-
-      let section = this.elements.upgradesContainer.querySelector(`.upgrade-section[data-upgrade-id="${upgrade.id}"]`);
-
-      const cost = game.getUpgradeCost(upgrade);
-      const canAfford = game.state.credits >= cost;
-      const isMaxed = upgrade.maxCount && count >= upgrade.maxCount;
-      const disabled = !canAfford || isMaxed;
-
-      let extra = "";
-      if (upgrade.id === 'reduceCooldown') {
-        const net = Math.min(100, 5 * count);
-        extra = ` <span class="text-accent">• Net: ${net}%</span>`;
-      }
-      
-      if (!section) {
-          section = document.createElement('div');
-          section.className = 'upgrade-section';
-          section.setAttribute('data-upgrade-id', upgrade.id);
-          section.innerHTML = `
-          <div class="upgrade-header">
-            <span class="upgrade-name-display"></span>
-            <span class="upgrade-cost-display"></span>
-          </div>
-          <div class="upgrade-description-display"></div>
-          <button class="btn purchase-btn" data-upgrade-id="${upgrade.id}">
-          </button>
-          `;
-          this.elements.upgradesContainer.appendChild(section);
-      }
-      
-      // Update Classes
-      if (isMaxed) section.classList.add('maxed');
-      else section.classList.remove('maxed');
-
-      // Update Texts
-      const nameDisplay = section.querySelector('.upgrade-name-display');
-      if (nameDisplay) nameDisplay.textContent = isMaxed ? `${upgrade.name} (Max)` : upgrade.name;
-      
-      const costDisplay = section.querySelector('.upgrade-cost-display');
-      if (costDisplay) costDisplay.textContent = isMaxed ? '' : `Cost: ${cost}`;
-      
-      const descDisplay = section.querySelector('.upgrade-description-display');
-      if (descDisplay) descDisplay.innerHTML = `${upgrade.description}${extra}`;
-      
-      // Update Button
-      const btn = section.querySelector('button');
-      if (btn) {
-           btn.textContent = isMaxed ? 'Maxed' : 'Purchase';
-           if (disabled) btn.setAttribute('disabled', '');
-           else btn.removeAttribute('disabled');
-
-           if (!canAfford && !isMaxed) btn.setAttribute('data-cost-blocked', 'true');
-           else btn.removeAttribute('data-cost-blocked');
-      }
-    }
-    
-    // Cleanup
-    const existing = this.elements.upgradesContainer.querySelectorAll('.upgrade-section');
-    existing.forEach(el => {
-        if (!activeIds.has(el.getAttribute('data-upgrade-id'))) {
-            el.remove();
-        }
-    });
+  offerCard(o, busy) {
+    const t = TIER_BY_ID[o.tier];
+    const g = this.game;
+    return h('li', { class: 'offer', dataset: { tier: o.tier } },
+      h('div', { class: 'offer-id' },
+        h('div', { class: 'offer-head' },
+          h('span', { class: 'offer-wanted' }, 'Wanted'),
+          h('span', { class: 'tag', dataset: { tier: o.tier } }, t.label),
+        ),
+        h('h3', { class: 'offer-name' }, o.name),
+        o.alias ? h('p', { class: 'offer-alias' }, `a.k.a. ${o.alias}`) : null,
+        h('p', { class: 'offer-crime' }, o.crime),
+      ),
+      h('div', { class: 'offer-side' },
+        h('p', { class: 'offer-reward' }, fmt(o.reward * g.derived.contractMult), h('small', {}, 'cr')),
+        h('p', { class: 'offer-sub' },
+          h('span', {}, `+${o.rep} rep`),
+          h('span', { dataset: { eta: o.id } }, '—'),
+        ),
+        h('button', {
+          class: 'btn primary', type: 'button', disabled: busy,
+          title: busy ? 'Finish your current contract first' : null,
+          onclick: () => g.takeContract(o.id),
+        }, 'Take the job'),
+      ),
+    );
   }
 
-  updateContracts(game) {
-    const section = this.elements.contractsSection;
-    const container = this.elements.contractsContainer;
-    if (!section || !container) return;
+  renderActiveContract() {
+    const g = this.game, a = g.state.contract.active;
+    if (!a) return;
+    const pct = Math.min(1, a.progress / a.goal);
+    $('activeBar').style.transform = `scaleX(${pct})`;
+    setText($('activeProgress'), fmt(Math.floor(a.progress)));
+    setText($('activeGoal'), fmt(a.goal));
+    const eta = (a.goal - a.progress) / g.power;
+    setText($('activeEta'), `~${duration(eta)} left`);
+  }
 
-    if (!game.state.flags.contractsUnlocked && game.crewTypes.some(c => c.count >= 10)) {
-      game.state.flags.contractsUnlocked = true;
-      this.showToast("Contracts unlocked!");
-    }
-
-    if (!game.state.flags.contractsUnlocked) {
-      section.classList.add("hidden");
+  renderBoardMeta() {
+    const g = this.game, c = g.state.contract;
+    if (!c.unlocked) {
+      const n = g.crewTotal, need = CONFIG.CONTRACTS_UNLOCK_CREW;
+      $('boardLockedBar').style.transform = `scaleX(${Math.min(1, n / need)})`;
+      setText($('boardLockedCount'), `${n} / ${need} crew`);
+      setText($('boardMeta'), 'Locked');
       return;
     }
-
-    section.classList.remove("hidden");
-    
-    // Warning text logic
-    const warningElement = section.querySelector('.warning-text');
-    if (warningElement && game.state.flags.contractsHintRemoved) {
-      warningElement.style.display = 'none';
-    }
-
-    const contract = game.contracts[game.state.currentContract];
-    if (!contract) return;
-
-    if (!game.state.contractActive) {
-      // Inactive State
-      if (!container.querySelector('.contract-inactive-view')) {
-          container.innerHTML = `
-            <div class="contract-progress contract-inactive-view">
-              <p class="contract-desc-display"></p>
-              <button class="btn btn-contract" id="takeContractBtn">Take Contract</button>
-            </div>
-          `;
-      }
-      
-      const desc = container.querySelector('.contract-desc-display');
-      if (desc) desc.textContent = contract.description;
-      
-      // Re-attach event listener if we wiped the container (simplified approach: 
-      // since the button ID is constant and event delegation is used in setupEventListeners, we don't need to re-bind)
-      
-    } else {
-      // Active State
-      let activeView = container.querySelector('.contract-active-view');
-      if (!activeView) {
-          container.innerHTML = `
-            <div class="contract-progress contract-active-view">
-              <p class="contract-details-display"></p>
-              <div>
-                 Progress: <strong id="contractProgressNum"></strong> 
-                 <span class="contract-goal-display"></span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill"></div>
-              </div>
-            </div>
-          `;
-          activeView = container.querySelector('.contract-active-view');
-      }
-
-      const progressPercent = Math.min(100, (game.state.contractProgress / contract.goal) * 100);
-      
-      const details = activeView.querySelector('.contract-details-display');
-      if (details) details.textContent = contract.details;
-      
-      const progressNum = activeView.querySelector('#contractProgressNum');
-      if (progressNum) progressNum.textContent = formatNumber(game.state.contractProgress);
-      
-      const goalDisplay = activeView.querySelector('.contract-goal-display');
-      if (goalDisplay) goalDisplay.textContent = `/ ${formatNumber(contract.goal)}`;
-      
-      const fill = activeView.querySelector('.progress-fill');
-      if (fill) fill.style.width = `${progressPercent}%`;
+    const left = (c.refreshedAt + CONFIG.CONTRACT_REFRESH_MS - Date.now()) / 1000;
+    setText($('boardMeta'), c.active ? `${g.state.stats.contracts} closed` : `New postings in ${duration(left)}`);
+    for (const o of c.offers) {
+      const el = document.querySelector(`[data-eta="${o.id}"]`);
+      if (el) setText(el, `~${duration(o.goal / g.power)}`);
     }
   }
 
-  updateActionButtons(game) {
-    if (this.elements.huntValue) {
-      this.elements.huntValue.textContent = `+${formatNumber(game.getClickValue())} credit`;
+  // ── ledger ────────────────────────────────────────────────────────────
+
+  renderLedger() {
+    const g = this.game, s = g.state, d = g.derived;
+    const rows = [
+      ['Credits earned, all time', `${fmt(s.lifetime)} cr`],
+      ['Best income', `${fmt(s.stats.bestRate, 1)} /s`],
+      ['Each hunt pays', `${fmt(g.huntValue, 1)} cr`],
+      ['Hunts by hand', fmt(s.stats.hunts)],
+      ['Hunts by snitch', fmt(s.stats.autoHunts)],
+      ['Crew on payroll', fmt(g.crewTotal)],
+      ['Contracts closed', fmt(s.stats.contracts)],
+      ['Reputation', `${fmt(s.rep)} (+${fmt((d.repBonus - 1) * 100)}% income)`],
+      ['Contract payout bonus', `×${d.contractMult.toFixed(2)}`],
+      ['Time at the desk', duration(s.stats.playMs / 1000)],
+      ['Office opened', new Date(s.stats.startedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })],
+    ];
+    const el = $('ledger');
+    if (el.childElementCount !== rows.length) {
+      el.replaceChildren(...rows.map(() => h('div', {}, h('dt'), h('dd'))));
     }
-
-    const contractBtn = this.elements.contractBtn;
-    if (contractBtn) {
-      if (game.state.contractActive) {
-        contractBtn.classList.remove("hidden");
-      } else {
-        contractBtn.classList.add("hidden");
-      }
-    }
+    rows.forEach(([k, v], i) => {
+      const row = el.children[i];
+      setText(row.children[0], k);
+      setText(row.children[1], v);
+    });
   }
 
-  updateLastSaved(game) {
-      if (this.elements.lastSaved) {
-          const sec = Math.floor((Date.now() - game.lastSaveTime) / 1000);
-          if (sec < 5) this.elements.lastSaved.textContent = "Last saved just now";
-          else this.elements.lastSaved.textContent = `Last saved ${sec}s ago`;
-      }
-  }
+  // ── tabs ──────────────────────────────────────────────────────────────
 
-  // --- Visual Effects ---
-
-  startCooldownVisualLoop() {
-    const loop = () => {
-      this.updateCooldownVisual();
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-  }
-
-  updateCooldownVisual() {
-     const now = Date.now();
-     const buttons = document.querySelectorAll('button[data-cooldown]');
-     
-     for (const btn of buttons) {
-       const type = btn.getAttribute('data-cooldown') || 'action';
-       const cd = this.game.state.cooldowns[type];
-       if (!cd) continue;
-
-       const total = cd.ms != null ? cd.ms : CONFIG.BASE_COOLDOWN_MS;
-       const readyAt = cd.readyAt || 0;
-
-       if (total === 0 || now >= readyAt) {
-         btn.style.setProperty('--cooldown-width', '0%');
-         // Only enable if not blocked by cost
-         if (!btn.hasAttribute('data-cost-blocked')) {
-            btn.disabled = false;
-         }
-       } else {
-         const elapsed = Math.max(0, total - (readyAt - now));
-         const pct = Math.max(0, Math.min(1, elapsed / total));
-         btn.style.setProperty('--cooldown-width', (pct * 100).toFixed(1) + '%');
-         btn.disabled = true;
-       }
-     }
-
-
-  }
-
-  showToast(message, type = "info") {
-    const container = this.elements.toastContainer;
-    if (!container) return;
-
-    const toast = document.createElement("div");
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    
-    container.appendChild(toast);
-    
-    // Remove after delay
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 500);
-    }, CONFIG.TOAST_DURATION_MS);
-
-    // Limit max toasts
-    while (container.children.length > CONFIG.MAX_TOASTS) {
-        container.removeChild(container.firstChild);
-    }
-  }
-
-  // --- Events ---
-
-  setupEventListeners() {
-      if (this.elements.huntBtn) {
-          this.elements.huntBtn.addEventListener('click', () => this.game.clickAction());
-      }
-      
-      if (this.elements.contractBtn) {
-           this.elements.contractBtn.addEventListener('click', () => this.game.advanceContract());
-      }
-
-      // Delegate
-      document.addEventListener('click', (e) => {
-          const target = e.target;
-          if (target.hasAttribute('data-crew-id')) {
-              this.game.hireCrew(target.getAttribute('data-crew-id'));
-          }
-          if (target.hasAttribute('data-upgrade-id')) {
-              this.game.purchaseUpgrade(target.getAttribute('data-upgrade-id'));
-          }
-          if (target.id === 'takeContractBtn') {
-              this.game.takeContract();
-          }
+  bindTabs() {
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => this.setTab(tab.dataset.tab));
+      tab.addEventListener('keydown', (e) => {
+        const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!dir) return;
+        const next = tabs[(i + dir + tabs.length) % tabs.length];
+        this.setTab(next.dataset.tab);
+        next.focus();
       });
-
-      // Save Controls
-      if (this.elements.manualSaveBtn) {
-          this.elements.manualSaveBtn.addEventListener('click', () => {
-              this.game.save();
-              this.updateLastSaved(this.game);
-              this.showToast("Game manually saved!", "manual-save");
-          });
-      }
-      
-      if (this.elements.autosaveToggleBtn) {
-          this.elements.autosaveToggleBtn.addEventListener('click', () => {
-              this.game.autosaveEnabled = !this.game.autosaveEnabled;
-              this.elements.autosaveToggleBtn.textContent = this.game.autosaveEnabled ? "Autosave ON" : "Autosave OFF";
-              this.elements.autosaveToggleBtn.classList.toggle("btn-active", this.game.autosaveEnabled);
-              
-              if (this.game.autosaveEnabled) this.game.startAutosave();
-              else if (this.game.autosaveId) clearInterval(this.game.autosaveId);
-          });
-      }
-      
-      if (this.elements.resetBtn) {
-           let resetPressCount = 0;
-           this.elements.resetBtn.addEventListener('click', () => {
-               resetPressCount++;
-               if (resetPressCount < 3) {
-                   this.elements.resetBtn.textContent = `Reset Save (${3 - resetPressCount} more)`;
-                   setTimeout(() => {
-                       resetPressCount = 0;
-                       this.elements.resetBtn.textContent = "Reset Save";
-                   }, 2000);
-                   return;
-               }
-               this.game.resetSave();
-           });
-      }
-
-
-      // Manage Saves Modal
-      if (this.elements.manageSavesBtn) {
-          this.elements.manageSavesBtn.addEventListener('click', () => {
-              if (this.elements.manageSavesPanel) this.elements.manageSavesPanel.classList.remove('hidden');
-          });
-      }
-
-      if (this.elements.closeManageSavesBtn) {
-          this.elements.closeManageSavesBtn.addEventListener('click', () => {
-              if (this.elements.manageSavesPanel) this.elements.manageSavesPanel.classList.add('hidden');
-          });
-      }
-
-      if (this.elements.exportSaveBtn) {
-          this.elements.exportSaveBtn.addEventListener('click', () => {
-              const saveString = this.game.exportSaveString();
-              if (navigator.clipboard) {
-                  navigator.clipboard.writeText(saveString).then(() => {
-                      this.showToast("Save exported to clipboard!", "success");
-                      
-                      // Button feedback
-                      const originalText = this.elements.exportSaveBtn.innerText;
-                      this.elements.exportSaveBtn.innerText = "Copied!";
-                      setTimeout(() => {
-                          this.elements.exportSaveBtn.innerText = originalText;
-                      }, 2000);
-                      
-                  }).catch(err => {
-                      console.error('Failed to copy: ', err);
-                      // Fallback for some browsers or non-secure contexts
-                      this.showToast("Check console for save string", "info");
-                      console.log("SAVE STRING:", saveString);
-                  });
-              } else {
-                   this.showToast("Check console for save string", "info");
-                   console.log("SAVE STRING:", saveString);
-              }
-          });
-      }
-
-      if (this.elements.importSaveBtn) {
-          this.elements.importSaveBtn.addEventListener('click', () => {
-              const saveString = prompt("Paste your save string here:");
-              if (saveString) {
-                  const success = this.game.importSaveString(saveString);
-                  if (!success) {
-                      this.showToast("Invalid save string!", "error");
-                  }
-              }
-          });
-      }
+    });
   }
 
-  // --- Settings (Simplified for this file) ---
-  
-  loadSettings() {
-      // Just reproducing the basics to keep parity
-      const settings = JSON.parse(localStorage.getItem("bountyIdle_settings") || "{}");
-      if (settings.fontMode) document.body.classList.add(`font-${settings.fontMode}`);
-      if (settings.crtStrength !== undefined) {
-          document.documentElement.style.setProperty("--crt-strength", settings.crtStrength);
-          this.updateCrtWarping(settings.crtStrength);
-      }
+  setTab(name) {
+    this.tab = name;
+    for (const tab of document.querySelectorAll('[role="tab"]')) {
+      const on = tab.dataset.tab === name;
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
+      toggle($(tab.getAttribute('aria-controls')), 'hidden', !on);
+    }
+    this.renderText();
   }
 
-  updateCrtWarping(strength) {
-      if (!this.elements.crtScreen || !this.elements.crtCorners) return;
-      const intensity = strength / 100;
-      const screenRotation = 0.3 + (intensity * 0.4);
-      const screenPerspective = 1500 + (intensity * 500);
-      this.elements.crtScreen.style.transform = `perspective(${screenPerspective}px) rotateX(${screenRotation}deg)`;
-      
-      const cornerRotationX = 0.5 + (intensity * 0.5);
-      const cornerRotationY = 0.3 + (intensity * 0.4);
-      const cornerPerspective = 800 + (intensity * 400);
-      
-      this.elements.crtCorners.style.transform = `perspective(${cornerPerspective}px) rotateX(${cornerRotationX}deg) rotateY(${cornerRotationY}deg)`;
+  // ── log & toasts ──────────────────────────────────────────────────────
+
+  addLog({ text, tone, at }) {
+    const log = $('log');
+    this.lastHire = null;
+    log.prepend(h('li', { class: `log-item ${tone}` }, h('time', {}, clock(at)), h('span', {}, text)));
+    while (log.childElementCount > CONFIG.LOG_LIMIT) log.lastElementChild.remove();
   }
-  
-  setupSettingsEvents() {
-      // Placeholder for full settings impl if needed, 
-      // but for refactor we focus on functionality.
-      // Assuming existing HTML structure remains.
-      if (this.elements.settingsBtn) {
-          this.elements.settingsBtn.addEventListener('click', () => {
-              this.elements.settingsMenuPanel.classList.remove('hidden');
-          });
+
+  onPurchase(e) {
+    if (e.kind === 'crew') {
+      const c = CREW.find((x) => x.id === e.id);
+      const last = this.lastHire;
+      const now = Date.now();
+      if (last && last.id === e.id && now - last.at < 8000 && last.el.isConnected) {
+        // Fold rapid repeat hires into one log line.
+        last.n += e.n;
+        last.at = now;
+        setText(last.el.lastChild, `Hired ${last.n} × ${c.name}.`);
+      } else {
+        this.addLog({ text: `Hired ${e.n > 1 ? `${e.n} × ` : ''}${c.name}.`, tone: 'info', at: new Date() });
+        this.lastHire = { id: e.id, n: e.n, at: now, el: $('log').firstElementChild };
       }
-      if (this.elements.closeSettingsBtn) {
-          this.elements.closeSettingsBtn.addEventListener('click', () => {
-              this.elements.settingsMenuPanel.classList.add('hidden');
-          });
-      }
+      const r = this.crewRows.get(e.id);
+      r.btn.classList.remove('flash');
+      void r.btn.offsetWidth;
+      r.btn.classList.add('flash');
+    }
+    this.renderText();
   }
-  
-  // --- Dev Menu Placeholder ---
-  setupDevMenuEvents() {
-      // Minimal dev menu support
-       document.addEventListener('keydown', (e) => {
-           if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-               if (this.elements.devMenuPanel) this.elements.devMenuPanel.classList.remove('hidden');
-           }
-       });
-       const closeDev = document.getElementById('closeDevMenuBtn');
-       if (closeDev) {
-           closeDev.addEventListener('click', () => {
-               if (this.elements.devMenuPanel) this.elements.devMenuPanel.classList.add('hidden');
-           });
-       }
-       // Dev buttons
-       const devBtns = document.querySelectorAll('.btn-dev-action');
-       devBtns.forEach(btn => {
-           btn.addEventListener('click', () => {
-               const action = btn.getAttribute('data-dev-action');
-               if (action === 'addCredits') {
-                   this.game.state.credits += 1000;
-                   this.game.notifyUI();
-               }
-           });
-       });
+
+  toast(text, tone = 'info') {
+    const box = $('toasts');
+    const el = h('div', { class: `toast ${tone}`, role: 'status' }, text);
+    box.append(el);
+    setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => el.remove(), 300);
+    }, 3200);
+    while (box.childElementCount > 3) box.firstElementChild.remove();
+  }
+
+  shake(el) {
+    el.classList.remove('nope');
+    void el.offsetWidth;
+    el.classList.add('nope');
+  }
+
+  showOffline(e) {
+    setText($('offlineText'), `You were away for ${duration(e.away)}. The crew kept working.`);
+    setText($('offlineAmount'), fmt(e.total));
+    const notes = [];
+    if (e.contractClosed) notes.push(`They closed the contract on ${e.contractClosed}.`);
+    else if (this.game.state.contract.active) notes.push('Their output went to your open contract.');
+    if (e.capped) notes.push(`Only the first ${duration(CONFIG.OFFLINE_CAP_S)} count.`);
+    setText($('offlineNote'), notes.join(' '));
+    $('offlineDialog').showModal();
+    this.game.log(`Back after ${duration(e.away)}. Crew brought in ${fmt(e.total)} cr.`, 'good');
+  }
+
+  // ── status bar ────────────────────────────────────────────────────────
+
+  bindStatus() {
+    $('autosaveBtn').addEventListener('click', () => this.setSetting('autosave', !this.settings.autosave));
+    $('saveNowBtn').addEventListener('click', () => {
+      if (this.game.save()) this.toast('Saved', 'info');
+    });
+    this.renderAutosave();
+  }
+
+  renderAutosave() {
+    const on = this.settings.autosave;
+    $('autosaveBtn').setAttribute('aria-pressed', String(on));
+    setText($('autosaveLabel'), on ? 'Autosave on' : 'Autosave off');
+  }
+
+  renderSaved() {
+    const sec = Math.floor((Date.now() - this.game.lastSavedAt) / 1000);
+    setText($('savedAgo'), sec < 5 ? 'Saved just now' : `Saved ${duration(sec)} ago`);
+  }
+
+  // ── settings ──────────────────────────────────────────────────────────
+
+  setSetting(key, value) {
+    this.settings[key] = value;
+    saveSettings(this.settings);
+    applySettings(this.settings);
+    if (key === 'autosave') {
+      this.game.setAutosave(value);
+      this.renderAutosave();
+    }
+    this.syncSettingsForm();
+    this.upgradeSig = '';
+    this.structureDirty = true;
+    this.renderBoard();
+  }
+
+  syncSettingsForm() {
+    for (const seg of document.querySelectorAll('.seg[data-setting]')) {
+      for (const b of seg.children) b.setAttribute('aria-pressed', String(b.dataset.value === this.settings[seg.dataset.setting]));
+    }
+    for (const box of document.querySelectorAll('input[data-setting]')) box.checked = !!this.settings[box.dataset.setting];
+  }
+
+  bindSettings() {
+    const dlg = $('settingsDialog');
+    $('settingsBtn').addEventListener('click', () => { this.syncSettingsForm(); dlg.showModal(); });
+
+    for (const seg of document.querySelectorAll('.seg[data-setting]')) {
+      seg.addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-value]');
+        if (b) this.setSetting(seg.dataset.setting, b.dataset.value);
+      });
+    }
+    for (const box of document.querySelectorAll('input[data-setting]')) {
+      box.addEventListener('change', () => this.setSetting(box.dataset.setting, box.checked));
+    }
+    matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => applySettings(this.settings));
+
+    // Click on the backdrop closes any dialog.
+    for (const d of document.querySelectorAll('dialog')) {
+      d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+    }
+
+    // Export / import share one dialog.
+    const saveDlg = $('saveDialog'), field = $('saveField'), err = $('saveError');
+    let mode = 'export';
+    $('exportBtn').addEventListener('click', () => {
+      mode = 'export';
+      setText($('saveTitle'), 'Export save');
+      setText($('saveText'), 'Keep this somewhere safe. Paste it into Import to restore your office on any device.');
+      setText($('saveConfirm'), 'Copy');
+      setText(err, '');
+      field.value = this.game.exportSave();
+      field.readOnly = true;
+      saveDlg.showModal();
+      field.select();
+    });
+    $('importBtn').addEventListener('click', () => {
+      mode = 'import';
+      setText($('saveTitle'), 'Import save');
+      setText($('saveText'), 'Paste a save string. This replaces your current office.');
+      setText($('saveConfirm'), 'Import');
+      setText(err, '');
+      field.value = '';
+      field.readOnly = false;
+      saveDlg.showModal();
+      field.focus();
+    });
+    $('saveCancel').addEventListener('click', () => saveDlg.close());
+    $('saveConfirm').addEventListener('click', async () => {
+      if (mode === 'export') {
+        try {
+          await navigator.clipboard.writeText(field.value);
+          setText($('saveConfirm'), 'Copied');
+        } catch {
+          field.select();
+          setText(err, 'Couldn’t reach the clipboard. The text is selected; copy it by hand.');
+        }
+        return;
+      }
+      try {
+        this.game.importSave(field.value);
+        saveDlg.close();
+        dlg.close();
+        this.toast('Save imported', 'good');
+      } catch (e) {
+        setText(err, 'That doesn’t look like a Bounty Office save.');
+      }
+    });
+
+    const resetDlg = $('resetDialog'), resetField = $('resetField'), resetConfirm = $('resetConfirm');
+    $('resetBtn').addEventListener('click', () => {
+      resetField.value = '';
+      resetConfirm.disabled = true;
+      resetDlg.showModal();
+      resetField.focus();
+    });
+    resetField.addEventListener('input', () => {
+      resetConfirm.disabled = resetField.value.trim().toUpperCase() !== 'WIPE';
+    });
+    resetConfirm.addEventListener('click', () => this.game.hardReset());
+  }
+
+  bindHotkeys() {
+    const isTyping = (t) => t.closest('input, textarea, select, [contenteditable]');
+    const anyDialog = () => document.querySelector('dialog[open]');
+    const isHuntKey = (e) => e.code === 'Space' || e.key === 'h' || e.key === 'H';
+
+    document.addEventListener('keydown', (e) => {
+      if (!this.settings.hotkeys || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (isTyping(e.target) || anyDialog()) return;
+      if (isHuntKey(e)) {
+        // Space on a focused button would also click it; we handle it here.
+        e.preventDefault();
+        if (!e.repeat) this.game.hunt();
+        return;
+      }
+      const tab = { 1: 'crew', 2: 'upgrades', 3: 'ledger' }[e.key];
+      if (tab) this.setTab(tab);
+    });
+    document.addEventListener('keyup', (e) => {
+      if (this.settings.hotkeys && e.code === 'Space' && !isTyping(e.target) && !anyDialog()) e.preventDefault();
+    });
   }
 }
