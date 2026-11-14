@@ -10,6 +10,10 @@ Play it at [game.korikosmos.dev](https://game.korikosmos.dev).
 - **Crew.** Eight tiers, from Rookies to a Pursuit Fleet. Each produces credits per second; hire ×1, ×10 or as many as you can afford.
 - **Upgrades.** Faster hunts, bigger hunts, a Snitch who hunts for you, office-wide income boosts, and training that doubles a crew type's output at 10 / 25 / 50 / 100 hires.
 - **Contracts.** Once you employ 10 crew, the guild posts work. Taking a contract sends all crew output and hunts to that target until it's closed. The payout is a multiple of what you put in, plus **reputation**, which permanently raises all income.
+- **The Back Room.** As lifetime earnings pass set thresholds, side rackets open up, each a different way to make money:
+  - **Dock Dice** (3K earned): stake credits, keep rolling to grow the pot, walk away before a one takes it all.
+  - **Warrant Exchange** (60K earned): a live, mean-reverting index with a chart. Buy below par, sell above it, and choose your leverage.
+  - **Intercepts** (750K earned): a code-breaking puzzle. Find the 4-symbol key in 8 tries; fewer tries pay more. A new one arrives every 3 minutes.
 - **Offline progress.** Crew keep earning for up to 8 hours while the tab is closed.
 
 Saves go to `localStorage` every 30 seconds and when you leave the page. Settings has export/import (a plain text string) and a wipe. Saves from the old version are migrated automatically.
@@ -35,6 +39,8 @@ src/
   data.js         crew, upgrades, contract tiers and name pools
   state.js        save shape, validation, legacy migration, encode/decode
   game.js         simulation: economy, hunting, contracts, offline progress
+  backroom.js     Back Room minigames: dice, exchange, intercepts (logic only)
+  backroom-ui.js  Back Room panel rendering and input
   ui.js           rendering and input
   settings.js     validated user settings
   format.js       number and duration formatting

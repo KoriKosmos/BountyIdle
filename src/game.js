@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { CREW, ALL_UPGRADES, CONTRACT_TIERS, CONTRACT_NAMES } from './data.js';
 import { readSave, writeSave, clearSave, encodeSave, decodeSave } from './state.js';
 import { fmt } from './format.js';
+import { BackRoom } from './backroom.js';
 
 const CREW_BY_ID = Object.fromEntries(CREW.map((c) => [c.id, c]));
 const UPGRADE_BY_ID = Object.fromEntries(ALL_UPGRADES.map((u) => [u.id, u]));
@@ -25,6 +26,7 @@ export class Game {
     this.autosave = true;
     this.lastSavedAt = Date.now();
     this.saveLocked = false;
+    this.backroom = new BackRoom(this);
   }
 
   // ── events ────────────────────────────────────────────────────────────
@@ -97,6 +99,7 @@ export class Game {
     if (this.derived.income > s.stats.bestRate) s.stats.bestRate = this.derived.income;
 
     this.checkUnlocks();
+    this.backroom.tick(dt);
     this.emit('tick', dt);
   }
 
