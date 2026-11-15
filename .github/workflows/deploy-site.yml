@@ -1,0 +1,37 @@
+name: Deploy to korikosmos.dev
+
+# korikosmos.dev bakes the newest commit of this repo's main into its image
+# whenever its update-deploy.sh runs. This runs that script on the
+# korikosmos.dev server after every push to main, so the site picks up the
+# change straight away. No tokens: the server's own runner does the work.
+#
+# Setup (once): register a second GitHub Actions runner on the korikosmos.dev
+# server for this repo, as the same user as the site's runner, with the label
+# `korikosmos`, then set this repo's DEPLOY_DIR variable to the site's deploy
+# clone (the same path as korikosmos.dev's DEPLOY_DIR). Until DEPLOY_DIR is
+# set, the job is skipped rather than left queued waiting for a runner.
+#
+# SECURITY (this is a PUBLIC repo): only a push to main, which needs write
+# access, or a manual run can reach the self-hosted runner. Never add a
+# `pull_request` trigger here, or a fork could run code on the server.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: korikosmos-deploy
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_DIR != ''
+    runs-on: [self-hosted, korikosmos]
+    timeout-minutes: 20
+    steps:
+      # No checkout: the site's deploy fetches this repo itself.
+      - name: Rebuild korikosmos.dev
+        working-directory: ${{ vars.DEPLOY_DIR }}
+        run: ./update-deploy.sh

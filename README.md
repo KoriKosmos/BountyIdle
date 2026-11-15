@@ -30,7 +30,7 @@ Then open http://localhost:8000.
 
 ## Deployment
 
-Pushes to `main` deploy to [game.korikosmos.dev](https://game.korikosmos.dev) and also ask [korikosmos.dev](https://korikosmos.dev/games/bounty-office/) to pull in the new version (`.github/workflows/notify-site.yml`). That second step needs a `SITE_DISPATCH_TOKEN` repository secret: a fine-grained personal access token for `KoriKosmos/korikosmos.dev` only, with **Contents: Read and write**. Without it the site still catches up once a day.
+Pushes to `main` deploy to [game.korikosmos.dev](https://game.korikosmos.dev) and also rebuild [korikosmos.dev](https://korikosmos.dev/games/bounty-office/), which bakes the newest `main` into its image. The second step (`.github/workflows/deploy-site.yml`) runs `update-deploy.sh` on the korikosmos.dev server through a self-hosted runner, so it needs no tokens. It is skipped until the repository variable `DEPLOY_DIR` is set; see the comment in the workflow for setup.
 
 ## Project layout
 
