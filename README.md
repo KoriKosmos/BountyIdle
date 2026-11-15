@@ -28,6 +28,10 @@ python3 -m http.server
 
 Then open http://localhost:8000.
 
+## Deployment
+
+Pushes to `main` deploy to [game.korikosmos.dev](https://game.korikosmos.dev) and also rebuild [korikosmos.dev](https://korikosmos.dev/games/bounty-office/), which bakes the newest `main` into its image. The second step (`.github/workflows/deploy-site.yml`) runs `update-deploy.sh` on the korikosmos.dev server through a self-hosted runner, so it needs no tokens. It is skipped until the repository variable `DEPLOY_DIR` is set; see the comment in the workflow for setup.
+
 ## Project layout
 
 ```
