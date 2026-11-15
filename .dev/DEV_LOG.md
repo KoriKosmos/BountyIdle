@@ -65,3 +65,11 @@ Rebuilt the game and its interface from scratch.
 - **Gameplay.** Eight crew tiers, bulk hiring, a generated training-upgrade track, a contract board with three risk tiers that scales with your output, reputation as a permanent income bonus, offline progress (8 h cap), and a stats ledger.
 - **Engine.** Time-based simulation instead of fixed 1 s ticks, a single `recompute()` for multipliers, validated save hydration, and v2 save migration.
 - **Old open fixes.** The unmerged fixes on `story-ui` (settings validation, conflicting Escape handlers, CRT opacity) targeted the pre-module `game.js`. They're superseded: settings are now schema-validated in `settings.js`, dialogs use native `<dialog>` Escape handling, and the CRT warp effect was replaced by an optional scanline overlay.
+
+## Back Room minigames (2026-11-14)
+
+Added alternative ways to earn, in the spirit of Universal Paperclips' side systems. They unlock at lifetime earnings of 3K, 60K and 750K:
+
+- **Dock Dice:** push-your-luck. Each roll adds face × 0.1 to the pot multiplier; a one loses the stake. Stakes are 30 s, 2 min or 10 min of output. Expected value favours rolling until about ×2.
+- **Warrant Exchange:** an Ornstein–Uhlenbeck-style index that reverts to par 100, with occasional news shocks. Positions are capped at 30 minutes of output, and leverage (×0.5 / ×1 / ×2.5) is fixed while a position is open. The market is frozen while the page is closed, so it can't be farmed offline.
+- **Intercepts:** Mastermind with 6 symbols, 4 slots and 8 tries. The payout is 4 minutes of output × (1 + 0.25 × unused tries), with a 3-minute cooldown between intercepts.

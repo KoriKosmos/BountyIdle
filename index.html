@@ -112,6 +112,93 @@
 
             <ul class="offers" id="offers" hidden></ul>
           </article>
+
+          <article class="panel backroom" id="backroom" hidden>
+            <header class="panel-head">
+              <h2>Back Room</h2>
+              <span class="panel-meta" id="brMeta"></span>
+            </header>
+
+            <div class="br-tabs" role="tablist" aria-label="Back room games" id="brTabs"></div>
+
+            <!-- Dock Dice -->
+            <section class="br-pane" id="br-dice" role="tabpanel" hidden>
+              <p class="br-blurb" data-blurb="dice"></p>
+              <div class="dice-table">
+                <div class="die" id="die" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <dl class="dice-pot">
+                  <dt>Pot</dt>
+                  <dd><span id="dicePot">—</span><small id="diceMult"></small></dd>
+                  <dt class="dice-status-label">Status</dt>
+                  <dd class="dice-status" id="diceStatus" aria-live="polite">Pick a stake to start a hand.</dd>
+                </dl>
+              </div>
+              <ol class="dice-rolls" id="diceRolls" aria-label="Rolls this hand"></ol>
+              <div class="dice-controls">
+                <div class="stakes" id="diceStakes"></div>
+                <div class="btn-row" id="diceActions" hidden>
+                  <button class="btn primary" type="button" id="diceRoll">Roll</button>
+                  <button class="btn" type="button" id="diceCash">Walk away</button>
+                </div>
+              </div>
+              <p class="br-rules">Each roll adds its face × 0.1 to the pot multiplier. A one loses the stake.</p>
+              <p class="br-foot" id="diceFoot"></p>
+            </section>
+
+            <!-- Warrant Exchange -->
+            <section class="br-pane" id="br-exchange" role="tabpanel" hidden>
+              <p class="br-blurb" data-blurb="exchange"></p>
+              <dl class="ex-stats">
+                <div><dt>Warrant index</dt><dd><span id="exIndex">100.0</span><small id="exDelta"></small></dd></div>
+                <div><dt>Your position</dt><dd><span id="exValue">0</span><small id="exPnl"></small></dd></div>
+              </dl>
+              <div class="ex-chart" id="exChartWrap">
+                <svg id="exChart" viewBox="0 0 320 110" preserveAspectRatio="none" role="img" aria-label="Warrant index, last three minutes">
+                  <line class="ex-par" id="exPar" x1="0" x2="320" />
+                  <path class="ex-area" id="exArea" />
+                  <polyline class="ex-line" id="exLine" />
+                  <line class="ex-cross" id="exCross" y1="0" y2="110" />
+                  <circle class="ex-dot" id="exDot" r="3.5" />
+                </svg>
+                <span class="ex-par-label" id="exParLabel">par 100</span>
+                <div class="ex-tip" id="exTip" hidden></div>
+                <div class="ex-axis"><span>3 min ago</span><span>now</span></div>
+              </div>
+              <div class="ex-controls">
+                <div class="seg" id="exRisk" role="radiogroup" aria-label="Leverage"></div>
+                <div class="btn-row">
+                  <button class="btn" type="button" data-buy="0.1">Buy 10%</button>
+                  <button class="btn" type="button" data-buy="0.5">Buy 50%</button>
+                  <button class="btn" type="button" data-buy="1">Buy max</button>
+                  <button class="btn primary" type="button" id="exSell">Sell all</button>
+                </div>
+              </div>
+              <p class="br-rules">The index drifts back toward par 100. Buy when it’s cheap, sell when it isn’t. Leverage multiplies every move, both ways. The market only moves while you’re here.</p>
+              <p class="br-foot" id="exFoot"></p>
+            </section>
+
+            <!-- Intercepts -->
+            <section class="br-pane" id="br-cipher" role="tabpanel" hidden>
+              <p class="br-blurb" data-blurb="cipher"></p>
+              <ol class="cipher-board" id="cipherBoard" aria-label="Guesses"></ol>
+              <div class="cipher-input" id="cipherInput">
+                <div class="cipher-slots" id="cipherSlots" aria-label="Current guess"></div>
+                <div class="cipher-keys" id="cipherKeys"></div>
+                <div class="btn-row">
+                  <button class="btn" type="button" id="cipherBack" aria-label="Delete last symbol">Delete</button>
+                  <button class="btn primary" type="button" id="cipherSend">Transmit</button>
+                </div>
+              </div>
+              <div class="cipher-idle" id="cipherIdle">
+                <p id="cipherIdleText"></p>
+                <button class="btn primary" type="button" id="cipherOpen">Open intercept</button>
+              </div>
+              <p class="br-rules">Find the 4-symbol key in 8 tries. <b class="peg exact"></b> right symbol, right place. <b class="peg near"></b> right symbol, wrong place. Fewer tries pay more.</p>
+              <p class="br-foot" id="cipherFoot"></p>
+            </section>
+
+            <p class="br-next" id="brNext"></p>
+          </article>
         </section>
 
         <!-- Roster: crew / upgrades / ledger -->

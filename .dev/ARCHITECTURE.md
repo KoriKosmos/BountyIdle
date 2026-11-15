@@ -20,6 +20,10 @@ Owns the state object and every rule. Never touches the DOM.
 - **Contracts.** Offers are sized from `power` (income plus a share of hunt output) times the tier's duration, so the board scales with you. While a contract is active, income and hunts go to `progress`; overflow on completion is paid out as credits.
 - **Persistence.** `save()` writes JSON to `localStorage`. `start()` reads it through `state.js#readSave`, applies offline progress and starts the loop.
 
+## Back Room (`src/backroom.js`, `src/backroom-ui.js`)
+
+Minigames that unlock at lifetime-earnings thresholds (`RACKETS`). `BackRoom` holds the rules and reads and writes `state.backroom`; `Game#tick` calls `backroom.tick(dt)`, which handles unlocks and steps the exchange every 2 s while the page is open. Stakes, position limits and intercept payouts are all sized from `game.power`, so they stay relevant at every stage. `hydrateBackroom()` validates the saved minigame state the same way `hydrate()` does for the rest. `BackRoomUI` renders the panel and is driven by the main UI's 10 Hz text pass.
+
 ## State (`src/state.js`)
 
 `createState()` defines the save shape. `hydrate(raw)` type-checks every field of a parsed save and clamps it, so a corrupt or hand-edited save can't break the game. `migrateLegacy()` converts the v2 `{ state, crewCounts }` format.

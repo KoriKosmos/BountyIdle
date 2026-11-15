@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { CREW, ALL_UPGRADES, CONTRACT_TIERS } from './data.js';
+import { createBackroom, hydrateBackroom } from './backroom.js';
 
 export const SAVE_VERSION = 3;
 
@@ -19,6 +20,7 @@ export function createState(now = Date.now()) {
       unlocked: false,
     },
     stats: { hunts: 0, autoHunts: 0, contracts: 0, startedAt: now, playMs: 0, bestRate: 0 },
+    backroom: createBackroom(),
     savedAt: now,
   };
 }
@@ -67,6 +69,7 @@ export function hydrate(raw) {
   s.stats.startedAt = num(st.startedAt, Date.now()) || Date.now();
   s.stats.playMs = num(st.playMs);
   s.stats.bestRate = num(st.bestRate);
+  s.backroom = hydrateBackroom(raw.backroom);
   s.savedAt = num(raw.savedAt, Date.now()) || Date.now();
   return s;
 }

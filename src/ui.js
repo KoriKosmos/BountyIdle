@@ -3,9 +3,12 @@ import { CREW, ALL_UPGRADES, CONTRACT_TIERS } from './data.js';
 import { fmt, duration, clock } from './format.js';
 import { loadSettings, saveSettings, applySettings } from './settings.js';
 import { h, $, setText, toggle } from './dom.js';
+import { BackRoomUI } from './backroom-ui.js';
+import { RACKETS } from './backroom.js';
 
 const TIER_BY_ID = Object.fromEntries(CONTRACT_TIERS.map((t) => [t.id, t]));
 const TEXT_HZ = 10;
+const signed = (n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))} cr`;
 
 const HUNT_COPY = [
   { at: 0,      kicker: 'Petty bounty',   title: 'Run down a skip' },
@@ -26,6 +29,7 @@ export class UI {
     this.upgradeSig = '';
     this.lastText = 0;
     this.lastAutoFloat = 0;
+    this.backroom = new BackRoomUI(game, this);
   }
 
   init() {
@@ -38,6 +42,7 @@ export class UI {
     this.bindStatus();
     this.bindSettings();
     this.bindHotkeys();
+    this.backroom.init();
 
     const g = this.game;
     g.on('log', (e) => this.addLog(e));
@@ -46,7 +51,10 @@ export class UI {
     g.on('hunt', (e) => this.onHunt(e));
     g.on('purchase', (e) => this.onPurchase(e));
     g.on('contract-complete', (e) => this.toast(`Contract closed · +${fmt(e.reward)} cr`, 'good'));
-    g.on('unlock', () => this.toast('Contract board unlocked', 'good'));
+    g.on('unlock', (id) => {
+      const racket = RACKETS.find((r) => r.id === id);
+      this.toast(racket ? `Back room: ${racket.name} unlocked` : 'Contract board unlocked', 'good');
+    });
     g.on('offline', (e) => this.showOffline(e));
     g.on('saved', () => this.renderSaved());
     g.on('reset', () => { this.structureDirty = true; this.renderBoard(); });
@@ -94,6 +102,7 @@ export class UI {
     this.renderActiveContract();
     this.renderBoardMeta();
     if (this.tab === 'ledger') this.renderLedger();
+    this.backroom.render();
     this.renderSaved();
   }
 
@@ -393,9 +402,12 @@ export class UI {
       ['Contracts closed', fmt(s.stats.contracts)],
       ['Reputation', `${fmt(s.rep)} (+${fmt((d.repBonus - 1) * 100)}% income)`],
       ['Contract payout bonus', `×${d.contractMult.toFixed(2)}`],
+      s.backroom.unlocked.dice && ['Dock dice, net', signed(s.backroom.dice.won - s.backroom.dice.lost)],
+      s.backroom.unlocked.exchange && ['Exchange, realised', signed(s.backroom.exchange.realised)],
+      s.backroom.unlocked.cipher && ['Intercepts cracked', `${fmt(s.backroom.cipher.solved)} (${fmt(s.backroom.cipher.earned)} cr)`],
       ['Time at the desk', duration(s.stats.playMs / 1000)],
       ['Office opened', new Date(s.stats.startedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })],
-    ];
+    ].filter(Boolean);
     const el = $('ledger');
     if (el.childElementCount !== rows.length) {
       el.replaceChildren(...rows.map(() => h('div', {}, h('dt'), h('dd'))));
