@@ -28,6 +28,10 @@ python3 -m http.server
 
 Then open http://localhost:8000.
 
+## Deployment
+
+Pushes to `main` deploy to [game.korikosmos.dev](https://game.korikosmos.dev) and also ask [korikosmos.dev](https://korikosmos.dev/games/bounty-office/) to pull in the new version (`.github/workflows/notify-site.yml`). That second step needs a `SITE_DISPATCH_TOKEN` repository secret: a fine-grained personal access token for `KoriKosmos/korikosmos.dev` only, with **Contents: Read and write**. Without it the site still catches up once a day.
+
 ## Project layout
 
 ```

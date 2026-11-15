@@ -73,3 +73,7 @@ Added alternative ways to earn, in the spirit of Universal Paperclips' side syst
 - **Dock Dice:** push-your-luck. Each roll adds face × 0.1 to the pot multiplier; a one loses the stake. Stakes are 30 s, 2 min or 10 min of output. Expected value favours rolling until about ×2.
 - **Warrant Exchange:** an Ornstein–Uhlenbeck-style index that reverts to par 100, with occasional news shocks. Positions are capped at 30 minutes of output, and leverage (×0.5 / ×1 / ×2.5) is fixed while a position is open. The market is frozen while the page is closed, so it can't be farmed offline.
 - **Intercepts:** Mastermind with 6 symbols, 4 slots and 8 tries. The payout is 4 minutes of output × (1 + 0.25 × unused tries), with a 3-minute cooldown between intercepts.
+
+## Site sync (2026-11-15)
+
+korikosmos.dev now hosts its own copy at `/games/bounty-office/`. `.github/workflows/notify-site.yml` sends it a `bounty-office-updated` repository dispatch with the commit SHA on every push to `main`, and the site's `sync-bounty-office` workflow copies the files in and redeploys. It needs the `SITE_DISPATCH_TOKEN` secret (see the README); without it the job skips and the site's daily sync picks the change up instead.
